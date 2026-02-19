@@ -1,11 +1,16 @@
-#include <iostream>
+
 #include <DirectXMath.h>
 #include <d3d11.h>
 #include <dxgi.h>
 #include <windows.h>
-#include <vector>
 
-struct Mesh{};
+
+struct Mesh{
+    //TODO: maybe make vertex attributes more cache-local
+    std::vector<DirectX::XMFLOAT4> vertices;
+    std::vector<uint32_t> indices;
+    DirectX::XMFLOAT4X4 transform;
+};
 
 struct MeshInstance {
     size_t meshIndex;
