@@ -7,6 +7,7 @@ add_subdirectory(external/assimp)
 
 set(HEADER_FILES 
         src/pch.h
+        src/Helpers.h
         src/Scene.h
         src/SceneLoader.h
         )
@@ -17,7 +18,10 @@ set(SOURCE_FILES
         src/SceneLoader.cpp
         )
 
-add_executable(luma WIN32 ${HEADER_FILES} ${SOURCE_FILES})
+set(HLSL_SOURCE_FILES
+        shaders/src/unity.hlsl)
+
+add_executable(luma WIN32 ${HEADER_FILES} ${SOURCE_FILES} ${HLSL_SOURCE_FILES})
 target_precompile_headers(luma PRIVATE src/pch.h)
 target_link_libraries(luma PUBLIC d3d11.lib)
 target_link_libraries(luma PUBLIC dxgi.lib)
