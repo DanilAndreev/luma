@@ -7,45 +7,29 @@
 
 
 namespace Loader {
-    void processNode(aiNode* node, const aiScene* scene) {
-        for (size_t i = 0; i < node->mNumMeshes; i++) {
-            aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
-            meshes_.push_back(this->processMesh(mesh, scene));
-        }
-
-        for (size_t i = 0; i < node->mNumChildren; i++) {
-            this->processNode(node->mChildren[i], scene);
-        }
-    }
-
-	Mesh ModelLoader::processMesh(aiMesh* mesh, const aiScene* scene) {
-		// Data to fill
-		std::vector<VERTEX> vertices;
-		std::vector<UINT> indices;
-		std::vector<Texture> textures;
-
+	static Mesh ModelLoader::processMesh(aiMesh* mesh, const aiScene* scene) {
 		static_assert(std::is_same_v<decltype(mesh->mVertices.x), bool>);
 		
 		Mesh result{};
 
-		size_t vertexBufferStrideInBytes = sizeof(DirectX::XMFLOAT4);
+		result.vaStride = sizeof(DirectX::XMFLOAT4);
 		if (mesh->HasNormals()) {
 			result.vaMask |= VertexAttributesMask::Normals;
-			vertexBufferStrideInBytes += sizeof(DirectX::XMFLOAT3);
+			result.vaStride += sizeof(DirectX::XMFLOAT3);
 		}
 		for (size_t i = 0; i < VertexAttributesMaxTexCoords; ++i) {
 			if (mesh->HasTextureCoords(i)) {
 				result.vaMask |= VertexAttributesMask::TexCoords0 << i;
-				vertexBufferStrideInBytes += sizeof(DirectX::XMFLOAT2);
+				result.vaStride += sizeof(DirectX::XMFLOAT2);
 			}
 		}
 		for (size_t i = 0; i < VertexAttributesMaxColors; ++i) {
 			if (mesh->HasVertexColors(i)) {
 				result.vaMask |= VertexAttributesMask::Color0 << i;
-				vertexBufferStrideInBytes += sizeof(DirectX::XMFLOAT4);
+				result.vaStride += sizeof(DirectX::XMFLOAT4);
 			}
 		}
-		size_t vertexBufferSizeInBytes = mesh->mNumVertices * vertexBufferStrideInBytes;
+		size_t vertexBufferSizeInBytes = mesh->mNumVertices * result.vaStride;
 
 
 		result.vertices.resize(vertexBufferSizeInBytes);
@@ -87,29 +71,41 @@ namespace Loader {
 			}
 		}
 
-		for (UINT i = 0; i < mesh->mNumFaces; i++) {
+		result.indices.reserve(mesh->mNumFaces * 3);
+		for (size_t i = 0; i < mesh->mNumFaces; ++i) {
 			aiFace face = mesh->mFaces[i];
-
-			for (UINT j = 0; j < face.mNumIndices; j++)
-				indices.push_back(face.mIndices[j]);
+			assert(face.mNumIndices == 3);
+			for (size_t j = 0; j < face.mNumIndices; ++j) {
+				result.indices.push_back(face.mIndices[j]);
+			}
 		}
 
-		if (mesh->mMaterialIndex >= 0) {
-			aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
+		//if (mesh->mMaterialIndex >= 0) {
+		//	aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
 
-			std::vector<Texture> diffuseMaps = this->loadMaterialTextures(material, aiTextureType_DIFFUSE, "texture_diffuse", scene);
-			textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
+		//	std::vector<Texture> diffuseMaps = this->loadMaterialTextures(material, aiTextureType_DIFFUSE, "texture_diffuse", scene);
+		//	textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
+		//}
+
+		return result;
+	}
+
+	static void processNode(aiNode* node, const aiScene* assimpScene, Scene& outScene) {
+		for (size_t i = 0; i < node->mNumMeshes; i++) {
+			aiMesh* mesh = assimpScene->mMeshes[node->mMeshes[i]];
+			outScene.meshes.push_back(processMesh(mesh, scene));
 		}
 
-		return Mesh(dev_, vertices, indices, textures);
+		for (size_t i = 0; i < node->mNumChildren; i++) {
+			this->processNode(node->mChildren[i], scene);
+		}
 	}
 
     bool LoadScene(Scene& scene) noexcept {
         Assimp::Importer importer;
 
-        const aiScene* pScene = importer.ReadFile(filename,
-            aiProcess_Triangulate |
-            aiProcess_ConvertToLeftHanded);
+		const auto flags = aiProcess_JoinIdenticalVertices | aiProcess_Triangulate | aiProcess_ConvertToLeftHanded | aiProcess_GenNormals;
+        const aiScene* pScene = importer.ReadFile("test.obj", flags);
         if (pScene == nullptr)
             return false;
 
