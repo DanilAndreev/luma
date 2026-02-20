@@ -261,8 +261,8 @@ void DrawMesh(Mesh* mesh) noexcept {
     inputElements[inputSlot].SemanticIndex = 0;
     ++inputSlot;
 
-    if (mesh->vaMask & VertexAttributesMask::Normals) {
-        const auto format = mesh->vaFlags & VertexAttributesFlags::HalfNormals ? DXGI_FORMAT_R16G16_FLOAT : DXGI_FORMAT_R32G32_FLOAT;
+    if (bool(mesh->vaMask & VertexAttributesMask::Normals)) {
+        const auto format = bool(mesh->vaFlags & VertexAttributesFlags::HalfNormals) ? DXGI_FORMAT_R16G16_FLOAT : DXGI_FORMAT_R32G32_FLOAT;
         inputElements[inputSlot].Format = format;
         inputElements[inputSlot].InputSlot = inputSlot;
         inputElements[inputSlot].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
