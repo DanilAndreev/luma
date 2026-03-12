@@ -3,6 +3,8 @@ project(luma)
 
 set(CMAKE_CXX_STANDARD 20)
 
+find_package(Python3 REQUIRED)
+
 add_subdirectory(external/assimp)
 
 set(HEADER_FILES 
@@ -32,5 +34,9 @@ set(ASSIMP_INSTALL OFF)
 target_link_libraries(luma PRIVATE assimp::assimp)
 
 add_custom_command(TARGET luma POST_BUILD
-                   COMMAND ${CMAKE_COMMAND} -E copy -t $<TARGET_FILE_DIR:luma>
-                   $<TARGET_RUNTIME_DLLS:luma> USES_TERMINAL COMMAND_EXPAND_LISTS)
+                   COMMAND ${CMAKE_COMMAND} -E copy -t $<TARGET_FILE_DIR:luma> $<TARGET_RUNTIME_DLLS:luma>
+                   USES_TERMINAL COMMAND_EXPAND_LISTS)
+
+add_custom_command(TARGET luma POST_BUILD
+                   COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/shaders/compile.py -o $<TARGET_FILE_DIR:luma>/sm
+                   USES_TERMINAL COMMAND_EXPAND_LISTS)
