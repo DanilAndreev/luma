@@ -72,20 +72,6 @@ constexpr size_t VertexAttributesEntriesSizeHalf[VertexAttributesEntriesCount] =
     sizeof(DirectX::PackedVector::XMHALF4), // Color7
 };
 
-/**
-  * @warning Includes first Float4 position size
-  */
-inline constexpr size_t ResolveVAOffsetFromMask(size_t vaIdx, VertexAttributesMask mask, VertexAttributesFlags flags) noexcept {
-    size_t result = sizeof(DirectX::XMFLOAT4);
-    for (size_t i = 0; i < vaIdx; ++i) {
-        if (mask & (1 << i)) {
-            result += flags & (1 << i) ? VertexAttributesEntriesSizeHalf[i] : VertexAttributesEntriesSizeDefault[i];
-        }
-    }
-    return result;
-}
-
-
 enum class VertexAttributesFlags : uint32_t {
     HalfNormals = 0x1 << 0,
     HalfTexCoords0 = 0x1 << 1,
@@ -108,6 +94,20 @@ enum class VertexAttributesFlags : uint32_t {
     validMask = 0xFFFF1,
 };
 LUMA_DEFINE_BITMASK_ENUM(VertexAttributesFlags);
+
+/**
+  * @warning Includes first Float4 position size
+  */
+inline constexpr size_t ResolveVAOffsetFromMask(size_t vaIdx, VertexAttributesMask mask, VertexAttributesFlags flags) noexcept {
+    size_t result = sizeof(DirectX::XMFLOAT4);
+    for (size_t i = 0; i < vaIdx; ++i) {
+        if (bool(mask & static_cast<VertexAttributesMask>(1 << i))) {
+            const auto pred = bool(flags & static_cast<VertexAttributesFlags>(1 << i));
+            result += pred ? VertexAttributesEntriesSizeHalf[i] : VertexAttributesEntriesSizeDefault[i];
+        }
+    }
+    return result;
+}
 
 struct Mesh{
     VertexAttributesMask vaMask = VertexAttributesMask::None;

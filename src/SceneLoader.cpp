@@ -7,25 +7,25 @@
 
 
 namespace Loader {
-	static Mesh ModelLoader::processMesh(aiMesh* mesh, const aiScene* scene) {
-		static_assert(std::is_same_v<decltype(mesh->mVertices.x), bool>);
+	static Mesh processMesh(aiMesh* mesh, const aiScene* scene) {
+		// static_assert(std::is_same_v<decltype(mesh->mVertices.x), bool>);
 		
 		Mesh result{};
 
 		result.vaStride = sizeof(DirectX::XMFLOAT4);
 		if (mesh->HasNormals()) {
-			result.vaMask |= VertexAttributesMask::Normals;
+			result.vaMask = result.vaMask | VertexAttributesMask::Normals;
 			result.vaStride += sizeof(DirectX::XMFLOAT3);
 		}
 		for (size_t i = 0; i < VertexAttributesMaxTexCoords; ++i) {
 			if (mesh->HasTextureCoords(i)) {
-				result.vaMask |= VertexAttributesMask::TexCoords0 << i;
+				result.vaMask = result.vaMask | VertexAttributesMask::TexCoords0 << i;
 				result.vaStride += sizeof(DirectX::XMFLOAT2);
 			}
 		}
 		for (size_t i = 0; i < VertexAttributesMaxColors; ++i) {
 			if (mesh->HasVertexColors(i)) {
-				result.vaMask |= VertexAttributesMask::Color0 << i;
+				result.vaMask = result.vaMask | VertexAttributesMask::Color0 << i;
 				result.vaStride += sizeof(DirectX::XMFLOAT4);
 			}
 		}
@@ -87,29 +87,30 @@ namespace Loader {
 		//	textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
 		//}
 
+		DirectX::XMStoreFloat4x4(&result.transform, DirectX::XMMatrixIdentity());
 		return result;
 	}
 
 	static void processNode(aiNode* node, const aiScene* assimpScene, Scene& outScene) {
 		for (size_t i = 0; i < node->mNumMeshes; i++) {
 			aiMesh* mesh = assimpScene->mMeshes[node->mMeshes[i]];
-			outScene.meshes.push_back(processMesh(mesh, scene));
+			outScene.meshes.push_back(processMesh(mesh, assimpScene));
 		}
 
 		for (size_t i = 0; i < node->mNumChildren; i++) {
-			this->processNode(node->mChildren[i], scene);
+			processNode(node->mChildren[i], assimpScene, outScene);
 		}
 	}
 
-    bool LoadScene(Scene& scene) noexcept {
+    bool LoadScene(Scene& outScene) noexcept {
         Assimp::Importer importer;
 
 		const auto flags = aiProcess_JoinIdenticalVertices | aiProcess_Triangulate | aiProcess_ConvertToLeftHanded | aiProcess_GenNormals;
-        const aiScene* pScene = importer.ReadFile("test.obj", flags);
+        const aiScene* pScene = importer.ReadFile("assets/stanford-bunny.obj", flags);
         if (pScene == nullptr)
             return false;
 
-        processNode(pScene->mRootNode, pScene);
+        processNode(pScene->mRootNode, pScene, outScene);
 
 
         return true;

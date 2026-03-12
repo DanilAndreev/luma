@@ -6,6 +6,7 @@
 
 
 #include "Scene.h"
+#include "SceneLoader.h"
 
 
 template <class DERIVED_TYPE>
@@ -176,6 +177,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR pCmdLine, int nCmdShow)
         framebuffer->Release();
     }
 
+    Scene scn{};
+    Loader::LoadScene(scn);
+
     // Main Loop
     bool isRunning = true;
     while(isRunning)
@@ -234,74 +238,74 @@ void DrawMesh(Mesh* mesh) noexcept {
     ID3D11Buffer* vertexBuffer;
     ID3D11Buffer* indexBuffer;
 
-    m_Ctx->VSSetShader();
-    m_Ctx->PSSetShader();
+    // m_Ctx->VSSetShader();
+    // m_Ctx->PSSetShader();
 
-    ID3D11Buffer* vertexBuffers[VertexAttributesEntriesCount] = {};
-    MeshIACache meshIA = {};
-    size_t vaActiveIdx = 0;
-    for (size_t i = 0; i < VertexAttributesEntriesCount; ++i) {
-        if (mesh->vaMask & (1 << i)) {
-            vertexBuffers[i] = vertexBuffer;
-            meshIA.vaOffsets[i] = ResolveVAOffsetFromMask(i, mesh->vaMask, mesh->vaFlags);
-        }
-        meshIA.vaStrides[i] = mesh->vaStride;
-    }
-    m_Ctx->IASetVertexBuffers(0, VertexAttributesEntriesCount, vertexBuffers, meshIA.vaStrides, meshIA.vaOffsets);
-    m_Ctx->IASetIndexBuffer(indexBuffer, DXGI_FORMAT_R32_UINT, 0);
+    // ID3D11Buffer* vertexBuffers[VertexAttributesEntriesCount] = {};
+    // MeshIACache meshIA = {};
+    // size_t vaActiveIdx = 0;
+    // for (size_t i = 0; i < VertexAttributesEntriesCount; ++i) {
+    //     if (mesh->vaMask & (1 << i)) {
+    //         vertexBuffers[i] = vertexBuffer;
+    //         meshIA.vaOffsets[i] = ResolveVAOffsetFromMask(i, mesh->vaMask, mesh->vaFlags);
+    //     }
+    //     meshIA.vaStrides[i] = mesh->vaStride;
+    // }
+    // m_Ctx->IASetVertexBuffers(0, VertexAttributesEntriesCount, vertexBuffers, meshIA.vaStrides, meshIA.vaOffsets);
+    // m_Ctx->IASetIndexBuffer(indexBuffer, DXGI_FORMAT_R32_UINT, 0);
 
 
-    UINT inputSlot = 0;
-    D3D11_INPUT_ELEMENT_DESC inputElements[VertexAttributesEntriesCount];
-    inputElements[inputSlot].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-    inputElements[inputSlot].InputSlot = inputSlot;
-    inputElements[inputSlot].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-    inputElements[inputSlot].InstanceDataStepRate = 0;
-    inputElements[inputSlot].SemanticName = "POSITION";
-    inputElements[inputSlot].SemanticIndex = 0;
-    ++inputSlot;
-
-    if (bool(mesh->vaMask & VertexAttributesMask::Normals)) {
-        const auto format = bool(mesh->vaFlags & VertexAttributesFlags::HalfNormals) ? DXGI_FORMAT_R16G16_FLOAT : DXGI_FORMAT_R32G32_FLOAT;
-        inputElements[inputSlot].Format = format;
-        inputElements[inputSlot].InputSlot = inputSlot;
-        inputElements[inputSlot].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-        inputElements[inputSlot].InstanceDataStepRate = 0;
-        inputElements[inputSlot].SemanticName = "NORMAL";
-        inputElements[inputSlot].SemanticIndex = 0;
-        ++inputSlot;
-    }
-
-    for (size_t i = 0; i < VertexAttributesMaxTexCoords; ++i) {
-        if (mesh->vaMask & (VertexAttributesMask::TexCoords0 << i)) {
-            const auto format = mesh->vaFlags & (VertexAttributesFlags::HalfTexCoords0 << i) ? DXGI_FORMAT_R16G16_FLOAT : DXGI_FORMAT_R32G32_FLOAT;
-            inputElements[inputSlot].Format = format;
-            inputElements[inputSlot].InputSlot = inputSlot;
-            inputElements[inputSlot].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-            inputElements[inputSlot].InstanceDataStepRate = 0;
-            inputElements[inputSlot].SemanticName = "TEXCOORD";
-            inputElements[inputSlot].SemanticIndex = i;
-            ++inputSlot;
-        }
-    }
-
-    for (size_t i = 0; i < VertexAttributesMaxColors; ++i) {
-        if (mesh->vaMask & (VertexAttributesMask::Color0 << i)) {
-            const auto format = mesh->vaFlags & (VertexAttributesFlags::HalfColor0 << i) ? DXGI_FORMAT_R16G16B16A16_FLOAT : DXGI_FORMAT_R32G32B32A32_FLOAT;
-            inputElements[inputSlot].Format = format;
-            inputElements[inputSlot].InputSlot = inputSlot;
-            inputElements[inputSlot].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-            inputElements[inputSlot].InstanceDataStepRate = 0;
-            inputElements[inputSlot].SemanticName = "COLOR";
-            inputElements[inputSlot].SemanticIndex = i;
-            ++inputSlot;
-        }
-    }
-    assert(inputSlot <= 15 + 1);
-
-    ID3D11InputLayout* inputLayout = nullptr;
-    m_Device->CreateInputLayout(inputElements, inputSlot, nullptr, 0, &inputLayout);
-
-    m_Ctx->IASetInputLayout(inputLayout);
-    m_Ctx->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    // UINT inputSlot = 0;
+    // D3D11_INPUT_ELEMENT_DESC inputElements[VertexAttributesEntriesCount];
+    // inputElements[inputSlot].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+    // inputElements[inputSlot].InputSlot = inputSlot;
+    // inputElements[inputSlot].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+    // inputElements[inputSlot].InstanceDataStepRate = 0;
+    // inputElements[inputSlot].SemanticName = "POSITION";
+    // inputElements[inputSlot].SemanticIndex = 0;
+    // ++inputSlot;
+    //
+    // if (bool(mesh->vaMask & VertexAttributesMask::Normals)) {
+    //     const auto format = bool(mesh->vaFlags & VertexAttributesFlags::HalfNormals) ? DXGI_FORMAT_R16G16_FLOAT : DXGI_FORMAT_R32G32_FLOAT;
+    //     inputElements[inputSlot].Format = format;
+    //     inputElements[inputSlot].InputSlot = inputSlot;
+    //     inputElements[inputSlot].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+    //     inputElements[inputSlot].InstanceDataStepRate = 0;
+    //     inputElements[inputSlot].SemanticName = "NORMAL";
+    //     inputElements[inputSlot].SemanticIndex = 0;
+    //     ++inputSlot;
+    // }
+    //
+    // for (size_t i = 0; i < VertexAttributesMaxTexCoords; ++i) {
+    //     if (mesh->vaMask & (VertexAttributesMask::TexCoords0 << i)) {
+    //         const auto format = mesh->vaFlags & (VertexAttributesFlags::HalfTexCoords0 << i) ? DXGI_FORMAT_R16G16_FLOAT : DXGI_FORMAT_R32G32_FLOAT;
+    //         inputElements[inputSlot].Format = format;
+    //         inputElements[inputSlot].InputSlot = inputSlot;
+    //         inputElements[inputSlot].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+    //         inputElements[inputSlot].InstanceDataStepRate = 0;
+    //         inputElements[inputSlot].SemanticName = "TEXCOORD";
+    //         inputElements[inputSlot].SemanticIndex = i;
+    //         ++inputSlot;
+    //     }
+    // }
+    //
+    // for (size_t i = 0; i < VertexAttributesMaxColors; ++i) {
+    //     if (mesh->vaMask & (VertexAttributesMask::Color0 << i)) {
+    //         const auto format = mesh->vaFlags & (VertexAttributesFlags::HalfColor0 << i) ? DXGI_FORMAT_R16G16B16A16_FLOAT : DXGI_FORMAT_R32G32B32A32_FLOAT;
+    //         inputElements[inputSlot].Format = format;
+    //         inputElements[inputSlot].InputSlot = inputSlot;
+    //         inputElements[inputSlot].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+    //         inputElements[inputSlot].InstanceDataStepRate = 0;
+    //         inputElements[inputSlot].SemanticName = "COLOR";
+    //         inputElements[inputSlot].SemanticIndex = i;
+    //         ++inputSlot;
+    //     }
+    // }
+    // assert(inputSlot <= 15 + 1);
+    //
+    // ID3D11InputLayout* inputLayout = nullptr;
+    // m_Device->CreateInputLayout(inputElements, inputSlot, nullptr, 0, &inputLayout);
+    //
+    // m_Ctx->IASetInputLayout(inputLayout);
+    // m_Ctx->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 }

@@ -1,0 +1,1 @@
+[Stanford Bunny](https://github.com/alecjacobson/common-3d-test-models/blob/master/data/stanford-bunny.obj)

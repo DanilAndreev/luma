@@ -9,6 +9,14 @@
     {                                                                                      \
         return static_cast<enumType>(static_cast<uint64_t>(a) | static_cast<uint64_t>(b)); \
     }                                                                                      \
+    inline enumType operator<<(enumType a, auto b) noexcept                                \
+    {                                                                                      \
+        return static_cast<enumType>(static_cast<uint64_t>(a) << b);                       \
+    }                                                                                      \
+    inline enumType operator>>(enumType a, auto b) noexcept                                \
+    {                                                                                      \
+        return static_cast<enumType>(static_cast<uint64_t>(a) >> b);                       \
+    }                                                                                      \
     inline bool operator||(bool a, enumType b) noexcept                                    \
     {                                                                                      \
         return a || static_cast<uint64_t>(b) != 0;                                         \
