@@ -12,16 +12,19 @@ set(HEADER_FILES
         src/Helpers.h
         src/Scene.h
         src/SceneLoader.h
+        src/ShaderManager.h
         )
 
 set(SOURCE_FILES
         src/main.cpp
         src/Scene.h
         src/SceneLoader.cpp
+        src/ShaderManager.cpp
         )
 
 set(HLSL_SOURCE_FILES
-        shaders/src/unity.hlsl)
+        shaders/src/unity.hlsl
+        )
 
 add_executable(luma WIN32 ${HEADER_FILES} ${SOURCE_FILES} ${HLSL_SOURCE_FILES})
 set_source_files_properties(${HLSL_SOURCE_FILES} PROPERTIES HEADER_FILE_ONLY TRUE)

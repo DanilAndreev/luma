@@ -33,8 +33,8 @@ if __name__ == '__main__':
     print(f"Compiling Shader Modules into '{outdir}'")
     os.makedirs(outdir, exist_ok=True)
 
-    compile_shader(path.join(shaders_dir, "unity.hlsl"), t="ps_5_1", ep="PSMain", out=path.join(outdir, "unity.ps.dxil"))
-    compile_shader(path.join(shaders_dir, "unity.hlsl"), t="vs_5_1", ep="VSMain", out=path.join(outdir, "unity.vs.dxil"))
+    compile_shader(path.join(shaders_dir, "unity.hlsl"), t="ps_5_0", ep="PSMain", out=path.join(outdir, "unity.ps.dxbc"))
+    compile_shader(path.join(shaders_dir, "unity.hlsl"), t="vs_5_0", ep="VSMain", out=path.join(outdir, "unity.vs.dxbc"))
 
     print(f"Successfully compiled all Shader Modules to '{outdir}'")
     exit(0)

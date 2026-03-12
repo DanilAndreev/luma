@@ -7,6 +7,7 @@
 
 #include "Scene.h"
 #include "SceneLoader.h"
+#include "ShaderManager.h"
 
 
 template <class DERIVED_TYPE>
@@ -180,6 +181,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR pCmdLine, int nCmdShow)
     Scene scn{};
     Loader::LoadScene(scn);
 
+    ShaderManager mngr{};
+    mngr.Initialize(device);
+
     // Main Loop
     bool isRunning = true;
     while(isRunning)
@@ -237,6 +241,10 @@ void DrawMesh(Mesh* mesh) noexcept {
     ID3D11DeviceContext* m_Ctx = nullptr;
     ID3D11Buffer* vertexBuffer;
     ID3D11Buffer* indexBuffer;
+
+    ID3D11PixelShader* PS;
+    // m_Device->CreatePixelShader(PS_Buffer->GetBufferPointer(), PS_Buffer->GetBufferSize(), NULL, &PS);
+
 
     // m_Ctx->VSSetShader();
     // m_Ctx->PSSetShader();
