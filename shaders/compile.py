@@ -11,9 +11,15 @@ def execute_command(args: list) -> tuple:
     return process.returncode, result, error
 
 
-def compile_shader(src: str, t, ep, out: str):
+def compile_shader(src: str, t, ep, out: str) -> tuple:
     fxc_executable = path.abspath(path.join("C:\\", "Program Files (x86)", "Windows Kits", "10", "bin", "10.0.26100.0", "x64", "fxc.exe"))
-    return execute_command([fxc_executable, "/T", t, "/E", ep, "/Fo", out, src])
+    code, result, error = execute_command([fxc_executable, "/T", t, "/E", ep, "/Fo", out, src])
+    if len(error):
+        print(f"Error: {error}")
+        exit(1)
+    else:
+        print(f"Compiled: {result}")
+    return code, result, error
 
 
 if __name__ == '__main__':
@@ -27,16 +33,8 @@ if __name__ == '__main__':
     print(f"Compiling Shader Modules into '{outdir}'")
     os.makedirs(outdir, exist_ok=True)
 
-    (code, result, error) = compile_shader(path.join(shaders_dir, "unity.hlsl"), t="ps_5_1", ep="PSMain", out=path.join(outdir, "unity.ps.dxil"))
-
-    decer = error.decode()
-    decrs = result.decode()
-
-    if len(error):
-        print(f"Error: {error}")
-        exit(1)
-    else:
-        print(f"Compiled: {decrs}")
+    compile_shader(path.join(shaders_dir, "unity.hlsl"), t="ps_5_1", ep="PSMain", out=path.join(outdir, "unity.ps.dxil"))
+    compile_shader(path.join(shaders_dir, "unity.hlsl"), t="vs_5_1", ep="VSMain", out=path.join(outdir, "unity.vs.dxil"))
 
     print(f"Successfully compiled all Shader Modules to '{outdir}'")
     exit(0)
