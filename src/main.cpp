@@ -7,6 +7,7 @@
 
 #include "Scene.h"
 #include "SceneLoader.h"
+#include "SceneRenderer.h"
 #include "ShaderManager.h"
 
 
@@ -80,15 +81,12 @@ protected:
     HWND m_hwnd;
 };
 
-
 class MainWindow : public BaseWindow<MainWindow>
 {
 public:
     LPCSTR  ClassName() const { return "MainWindow"; }
     LRESULT HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam);
 };
-
-
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR pCmdLine, int nCmdShow)
 {
@@ -178,11 +176,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR pCmdLine, int nCmdShow)
         framebuffer->Release();
     }
 
+    g_SM.Initialize(device);
+
     Scene scn{};
     Loader::LoadScene(scn);
+    Loader::UploadSceneBuffersToGPU(scn, device);
 
-    ShaderManager mngr{};
-    mngr.Initialize(device);
+    SceneRenderer renderer{};
+    renderer.Initialize(device, context);
+
 
     // Main Loop
     bool isRunning = true;
@@ -199,7 +201,27 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR pCmdLine, int nCmdShow)
 
         FLOAT backgroundColor[4] = { 0.1f, 0.2f, 0.6f, 1.0f };
         context->ClearRenderTargetView(framebufferRTV, backgroundColor);
+        renderer.RenderFrame(&scn, framebufferRTV);
         swapchain->Present(1, 0);
+
+
+        DirectX::XMFLOAT3 movementDelta{};
+        float deltaTime = 0.1;
+        if (g_Input.Pressed(KeyID::A)) {
+            movementDelta.x = -1;
+        }
+        if (g_Input.Pressed(KeyID::D)) {
+            movementDelta.x = 1;
+        }
+        if (g_Input.Pressed(KeyID::W)) {
+            movementDelta.z = 1;
+        }
+        if (g_Input.Pressed(KeyID::S)) {
+            movementDelta.z = -1;
+        }
+        if (movementDelta.x + movementDelta.y + movementDelta.z > 0) {
+            g_Cam.MoveBy({movementDelta.x * deltaTime, movementDelta.y * deltaTime, movementDelta.z * deltaTime});
+        }
     }
 
     device->Release();
@@ -207,113 +229,64 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR pCmdLine, int nCmdShow)
     return 0;
 }
 
-LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
-{
-    switch (uMsg)
-    {
-    case WM_DESTROY:
-        PostQuitMessage(0);
-        return 0;
-
-    case WM_PAINT:
-        {
-            PAINTSTRUCT ps;
-            HDC hdc = BeginPaint(m_hwnd, &ps);
-            FillRect(hdc, &ps.rcPaint, (HBRUSH) (COLOR_WINDOW+1));
-            EndPaint(m_hwnd, &ps);
-        }
-        return 0;
-
-    default:
-        return DefWindowProc(m_hwnd, uMsg, wParam, lParam);
+KeyID WinKeyToKeyID(WPARAM wParam) noexcept {
+    switch (wParam) {
+        case VK_LEFT:
+            return KeyID::Left;
+        case VK_RIGHT:
+            return KeyID::Right;
+        case VK_UP:
+            return KeyID::Up;
+        case VK_DOWN:
+            return KeyID::Down;
+        case 'Q':
+            return KeyID::Q;
+        case 'W':
+            return KeyID::W;
+        case 'E':
+            return KeyID::E;
+        case 'A':
+            return KeyID::A;
+        case 'S':
+            return KeyID::S;
+        case 'D':
+            return KeyID::D;
+        case 'Z':
+            return KeyID::Z;
+        case 'X':
+            return KeyID::X;
+        case 'C':
+            return KeyID::C;
+        default:
+            return KeyID::None;
     }
-    return TRUE;
 }
 
-struct MeshIACache {
-    //TODO: maybe move stides, array equal elements
-    UINT vaStrides[VertexAttributesEntriesCount] = {};
-    UINT vaOffsets[VertexAttributesEntriesCount] = {};
-};
+LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
+    switch (uMsg) {
+        case WM_DESTROY:
+            PostQuitMessage(0);
+            return 0;
 
-void DrawMesh(Mesh* mesh) noexcept {
-    ID3D11Device* m_Device;
-    ID3D11DeviceContext* m_Ctx = nullptr;
-    ID3D11Buffer* vertexBuffer;
-    ID3D11Buffer* indexBuffer;
-
-    ID3D11PixelShader* PS;
-    // m_Device->CreatePixelShader(PS_Buffer->GetBufferPointer(), PS_Buffer->GetBufferSize(), NULL, &PS);
-
-
-    // m_Ctx->VSSetShader();
-    // m_Ctx->PSSetShader();
-
-    // ID3D11Buffer* vertexBuffers[VertexAttributesEntriesCount] = {};
-    // MeshIACache meshIA = {};
-    // size_t vaActiveIdx = 0;
-    // for (size_t i = 0; i < VertexAttributesEntriesCount; ++i) {
-    //     if (mesh->vaMask & (1 << i)) {
-    //         vertexBuffers[i] = vertexBuffer;
-    //         meshIA.vaOffsets[i] = ResolveVAOffsetFromMask(i, mesh->vaMask, mesh->vaFlags);
-    //     }
-    //     meshIA.vaStrides[i] = mesh->vaStride;
-    // }
-    // m_Ctx->IASetVertexBuffers(0, VertexAttributesEntriesCount, vertexBuffers, meshIA.vaStrides, meshIA.vaOffsets);
-    // m_Ctx->IASetIndexBuffer(indexBuffer, DXGI_FORMAT_R32_UINT, 0);
+        case WM_PAINT: {
+            PAINTSTRUCT ps;
+            HDC hdc = BeginPaint(m_hwnd, &ps);
+            FillRect(hdc, &ps.rcPaint, (HBRUSH) (COLOR_WINDOW + 1));
+            EndPaint(m_hwnd, &ps);
+            return 0;
+        }
+        case WM_KEYDOWN: {
+            g_Input.Signal(WinKeyToKeyID(wParam), true);
+            return 0;
+        }
+        case WM_KEYUP: {
+            g_Input.Signal(WinKeyToKeyID(wParam), false);
+            return 0;
+        }
 
 
-    // UINT inputSlot = 0;
-    // D3D11_INPUT_ELEMENT_DESC inputElements[VertexAttributesEntriesCount];
-    // inputElements[inputSlot].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-    // inputElements[inputSlot].InputSlot = inputSlot;
-    // inputElements[inputSlot].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-    // inputElements[inputSlot].InstanceDataStepRate = 0;
-    // inputElements[inputSlot].SemanticName = "POSITION";
-    // inputElements[inputSlot].SemanticIndex = 0;
-    // ++inputSlot;
-    //
-    // if (bool(mesh->vaMask & VertexAttributesMask::Normals)) {
-    //     const auto format = bool(mesh->vaFlags & VertexAttributesFlags::HalfNormals) ? DXGI_FORMAT_R16G16_FLOAT : DXGI_FORMAT_R32G32_FLOAT;
-    //     inputElements[inputSlot].Format = format;
-    //     inputElements[inputSlot].InputSlot = inputSlot;
-    //     inputElements[inputSlot].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-    //     inputElements[inputSlot].InstanceDataStepRate = 0;
-    //     inputElements[inputSlot].SemanticName = "NORMAL";
-    //     inputElements[inputSlot].SemanticIndex = 0;
-    //     ++inputSlot;
-    // }
-    //
-    // for (size_t i = 0; i < VertexAttributesMaxTexCoords; ++i) {
-    //     if (mesh->vaMask & (VertexAttributesMask::TexCoords0 << i)) {
-    //         const auto format = mesh->vaFlags & (VertexAttributesFlags::HalfTexCoords0 << i) ? DXGI_FORMAT_R16G16_FLOAT : DXGI_FORMAT_R32G32_FLOAT;
-    //         inputElements[inputSlot].Format = format;
-    //         inputElements[inputSlot].InputSlot = inputSlot;
-    //         inputElements[inputSlot].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-    //         inputElements[inputSlot].InstanceDataStepRate = 0;
-    //         inputElements[inputSlot].SemanticName = "TEXCOORD";
-    //         inputElements[inputSlot].SemanticIndex = i;
-    //         ++inputSlot;
-    //     }
-    // }
-    //
-    // for (size_t i = 0; i < VertexAttributesMaxColors; ++i) {
-    //     if (mesh->vaMask & (VertexAttributesMask::Color0 << i)) {
-    //         const auto format = mesh->vaFlags & (VertexAttributesFlags::HalfColor0 << i) ? DXGI_FORMAT_R16G16B16A16_FLOAT : DXGI_FORMAT_R32G32B32A32_FLOAT;
-    //         inputElements[inputSlot].Format = format;
-    //         inputElements[inputSlot].InputSlot = inputSlot;
-    //         inputElements[inputSlot].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-    //         inputElements[inputSlot].InstanceDataStepRate = 0;
-    //         inputElements[inputSlot].SemanticName = "COLOR";
-    //         inputElements[inputSlot].SemanticIndex = i;
-    //         ++inputSlot;
-    //     }
-    // }
-    // assert(inputSlot <= 15 + 1);
-    //
-    // ID3D11InputLayout* inputLayout = nullptr;
-    // m_Device->CreateInputLayout(inputElements, inputSlot, nullptr, 0, &inputLayout);
-    //
-    // m_Ctx->IASetInputLayout(inputLayout);
-    // m_Ctx->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+        default:
+            return DefWindowProc(m_hwnd, uMsg, wParam, lParam);
+    }
+    return TRUE;
 }

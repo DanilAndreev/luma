@@ -27,14 +27,14 @@ if __name__ == '__main__':
     parser.add_argument('-o', '--outdir', type=str, default="./")
     args = parser.parse_args()
 
-    shaders_dir = path.abspath(path.join(path.dirname(__file__), "src"))
+    shaders_dir = path.abspath(path.join(path.dirname(__file__), "hlsl"))
     outdir = path.abspath(args.outdir)
 
     print(f"Compiling Shader Modules into '{outdir}'")
     os.makedirs(outdir, exist_ok=True)
 
+    compile_shader(path.join(shaders_dir, "vertex.hlsl"), t="vs_5_0", ep="VSMain", out=path.join(outdir, "vertex.vs.dxbc"))
     compile_shader(path.join(shaders_dir, "unity.hlsl"), t="ps_5_0", ep="PSMain", out=path.join(outdir, "unity.ps.dxbc"))
-    compile_shader(path.join(shaders_dir, "unity.hlsl"), t="vs_5_0", ep="VSMain", out=path.join(outdir, "unity.vs.dxbc"))
 
     print(f"Successfully compiled all Shader Modules to '{outdir}'")
     exit(0)

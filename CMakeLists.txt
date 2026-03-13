@@ -9,28 +9,42 @@ add_subdirectory(external/assimp)
 
 set(HEADER_FILES 
         src/pch.h
+        src/Globals.h
         src/Helpers.h
         src/Scene.h
+        src/Camera.h
         src/SceneLoader.h
         src/ShaderManager.h
+        src/InputDeviceState.h
+        src/SceneRenderer.h
         )
 
 set(SOURCE_FILES
         src/main.cpp
+        src/Globlas.cpp
         src/Scene.h
+        src/Camera.cpp
         src/SceneLoader.cpp
         src/ShaderManager.cpp
+        src/InputDeviceState.cpp
+        src/SceneRenderer.cpp
         )
 
 set(HLSL_SOURCE_FILES
-        shaders/src/unity.hlsl
-        )
+        shaders/hlsl/HLSLCPPCompat.hlsli
+        shaders/hlsl/ShaderTypes.hlsli
+        shaders/hlsl/vertexSemantics.hlsli
+
+        shaders/hlsl/vertex.hlsl
+        shaders/hlsl/unity.hlsl
+)
 
 add_executable(luma WIN32 ${HEADER_FILES} ${SOURCE_FILES} ${HLSL_SOURCE_FILES})
 set_source_files_properties(${HLSL_SOURCE_FILES} PROPERTIES HEADER_FILE_ONLY TRUE)
 target_precompile_headers(luma PRIVATE src/pch.h)
 target_link_libraries(luma PUBLIC d3d11.lib)
 target_link_libraries(luma PUBLIC dxgi.lib)
+target_include_directories(luma PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/shaders)
 
 set(ASSIMP_NO_EXPORT ON)
 set(ASSIMP_INSTALL OFF)

@@ -1,6 +1,5 @@
 #pragma once
 
-#include <DirectXMath.h>
 #include <DirectXPackedVector.h>
 
 constexpr size_t VertexAttributesMaxTexCoords = 8;
@@ -109,7 +108,7 @@ inline constexpr size_t ResolveVAOffsetFromMask(size_t vaIdx, VertexAttributesMa
     return result;
 }
 
-struct Mesh{
+struct Mesh {
     VertexAttributesMask vaMask = VertexAttributesMask::None;
     VertexAttributesFlags vaFlags = {};
 
@@ -117,6 +116,10 @@ struct Mesh{
     std::vector<char> vertices;
     std::vector<uint32_t> indices;
     DirectX::XMFLOAT4X4 transform;
+
+    ID3D11Buffer* vb = nullptr;
+    ID3D11Buffer* ib = nullptr;
+    ID3D11InputLayout* inputLayout = nullptr;
 };
 
 struct MeshInstance {

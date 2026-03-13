@@ -13,8 +13,9 @@ void ShaderManager::Initialize(ID3D11Device* device) noexcept {
     }
 
     {
-        auto bytecode = LoadFile(compiledShadersDir / "unity.vs.dxbc");
+        auto bytecode = LoadFile(compiledShadersDir / "vertex.vs.dxbc");
         device->CreateVertexShader(bytecode.data(), bytecode.size(), NULL, &Get(VertexShaderID::Unity));
+        m_VSSrc[static_cast<size_t>(VertexShaderID::Unity)] = std::move(bytecode);
     }
 
     for (size_t i = 0; i < static_cast<size_t>(PixelShaderID::Count); ++i) {
@@ -33,6 +34,10 @@ ID3D11PixelShader*& ShaderManager::Get(PixelShaderID id) noexcept {
 ID3D11VertexShader*& ShaderManager::Get(VertexShaderID id) noexcept {
     assert(id < VertexShaderID::Count);
     return m_VS[static_cast<size_t>(id)];
+}
+
+const std::vector<char> & ShaderManager::GetSrc(VertexShaderID id) noexcept {
+    return m_VSSrc[static_cast<size_t>(id)];
 }
 
 std::vector<char> ShaderManager::LoadFile(std::filesystem::path filepath) noexcept {

@@ -88,6 +88,9 @@ namespace Loader {
 		//}
 
 		DirectX::XMStoreFloat4x4(&result.transform, DirectX::XMMatrixIdentity());
+
+
+
 		return result;
 	}
 
@@ -105,8 +108,9 @@ namespace Loader {
     bool LoadScene(Scene& outScene) noexcept {
         Assimp::Importer importer;
 
-		const auto flags = aiProcess_JoinIdenticalVertices | aiProcess_Triangulate | aiProcess_ConvertToLeftHanded | aiProcess_GenNormals;
+		const auto flags = aiProcess_JoinIdenticalVertices | aiProcess_Triangulate | aiProcess_ConvertToLeftHanded | aiProcess_GenNormals | aiProcess_CalcTangentSpace;
         const aiScene* pScene = importer.ReadFile("assets/stanford-bunny.obj", flags);
+		assert(pScene && (pScene->mFlags & AI_SCENE_FLAGS_INCOMPLETE) == 0);
         if (pScene == nullptr)
             return false;
 
@@ -115,4 +119,84 @@ namespace Loader {
 
         return true;
     }
+
+	bool UploadSceneBuffersToGPU(Scene& scene, ID3D11Device* device) noexcept {
+		for (Mesh& mesh : scene.meshes) {
+			D3D11_BUFFER_DESC desc{};
+			desc.Usage = D3D11_USAGE_DEFAULT;
+			desc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+			desc.CPUAccessFlags = 0;
+			desc.ByteWidth = mesh.vertices.size();
+			desc.StructureByteStride = 0;
+
+			D3D11_SUBRESOURCE_DATA data{};
+			data.pSysMem = mesh.vertices.data();
+			device->CreateBuffer(&desc, &data, &mesh.vb);
+
+			desc.ByteWidth = mesh.indices.size();
+			desc.BindFlags = D3D11_BIND_INDEX_BUFFER;
+			data.pSysMem = mesh.indices.data();
+			device->CreateBuffer(&desc, &data, &mesh.ib);
+
+
+			// --------- IA -------------------------------------------------------------
+			UINT inputSlot = 0;
+			D3D11_INPUT_ELEMENT_DESC inputElements[VertexAttributesEntriesCount] = {};
+			inputElements[inputSlot].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+			inputElements[inputSlot].InputSlot = inputSlot;
+			inputElements[inputSlot].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+			inputElements[inputSlot].InstanceDataStepRate = 0;
+			inputElements[inputSlot].SemanticName = "POSITION";
+			inputElements[inputSlot].SemanticIndex = 0;
+			++inputSlot;
+
+			if (bool(mesh.vaMask & VertexAttributesMask::Normals)) {
+				const auto format = bool(mesh.vaFlags & VertexAttributesFlags::HalfNormals)
+					                    ? DXGI_FORMAT_R16G16B16A16_FLOAT
+					                    : DXGI_FORMAT_R32G32B32A32_FLOAT;
+				inputElements[inputSlot].Format = format;
+				inputElements[inputSlot].InputSlot = inputSlot;
+				inputElements[inputSlot].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+				inputElements[inputSlot].InstanceDataStepRate = 0;
+				inputElements[inputSlot].SemanticName = "NORMAL";
+				inputElements[inputSlot].SemanticIndex = 0;
+				++inputSlot;
+			}
+
+			for (size_t i = 0; i < VertexAttributesMaxTexCoords; ++i) {
+				if (bool(mesh.vaMask & (VertexAttributesMask::TexCoords0 << i))) {
+					const auto format = bool(mesh.vaFlags & (VertexAttributesFlags::HalfTexCoords0 << i))
+						                    ? DXGI_FORMAT_R16G16_FLOAT
+						                    : DXGI_FORMAT_R32G32_FLOAT;
+					inputElements[inputSlot].Format = format;
+					inputElements[inputSlot].InputSlot = inputSlot;
+					inputElements[inputSlot].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+					inputElements[inputSlot].InstanceDataStepRate = 0;
+					inputElements[inputSlot].SemanticName = "TEXCOORD";
+					inputElements[inputSlot].SemanticIndex = i;
+					++inputSlot;
+				}
+			}
+
+			for (size_t i = 0; i < VertexAttributesMaxColors; ++i) {
+				if (bool(mesh.vaMask & (VertexAttributesMask::Color0 << i))) {
+					const auto format = bool(mesh.vaFlags & (VertexAttributesFlags::HalfColor0 << i))
+						                    ? DXGI_FORMAT_R16G16B16A16_FLOAT
+						                    : DXGI_FORMAT_R32G32B32A32_FLOAT;
+					inputElements[inputSlot].Format = format;
+					inputElements[inputSlot].InputSlot = inputSlot;
+					inputElements[inputSlot].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+					inputElements[inputSlot].InstanceDataStepRate = 0;
+					inputElements[inputSlot].SemanticName = "COLOR";
+					inputElements[inputSlot].SemanticIndex = i;
+					++inputSlot;
+				}
+			}
+			assert(inputSlot <= 15 + 1);
+
+			const auto& shaderSrc = g_SM.GetSrc(VertexShaderID::Unity);
+			device->CreateInputLayout(inputElements, inputSlot, shaderSrc.data(), shaderSrc.size(), &mesh.inputLayout);
+		}
+		return true;
+	}
 }

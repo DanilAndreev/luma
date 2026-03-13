@@ -1,0 +1,16 @@
+#include "vertexSemantics.hlsli"
+
+#include "ShaderTypes.hlsli"
+
+cbuffer CB_CameraParams : register(b0) { HLSL::CameraParams CBCameraParams; }
+//cbuffer CB_CameraParams : register(b3) { float4x4 mat; }
+
+VSOut VSMain(VSIn input) {
+    VSOut output;
+
+    output.position = mul(input.position, CBCameraParams.worldToCamera);
+    output.normal = input.normal;
+    //output.texcoor0 = input.texcoor0;
+    //output.color0 = input.color0;
+    return output;
+}
