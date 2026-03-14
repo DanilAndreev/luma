@@ -36,5 +36,8 @@ if __name__ == '__main__':
     compile_shader(path.join(shaders_dir, "vertex.hlsl"), t="vs_5_0", ep="VSMain", out=path.join(outdir, "vertex.vs.dxbc"))
     compile_shader(path.join(shaders_dir, "unity.hlsl"), t="ps_5_0", ep="PSMain", out=path.join(outdir, "unity.ps.dxbc"))
 
+    compile_shader(path.join(shaders_dir, "pointLightVisualize.hlsl"), t="vs_5_0", ep="VSMain", out=path.join(outdir, "pointLightVisualize.vs.dxbc"))
+    compile_shader(path.join(shaders_dir, "pointLightVisualize.hlsl"), t="ps_5_0", ep="PSMain", out=path.join(outdir, "pointLightVisualize.ps.dxbc"))
+
     print(f"Successfully compiled all Shader Modules to '{outdir}'")
     exit(0)

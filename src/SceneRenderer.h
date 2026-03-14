@@ -10,6 +10,8 @@ public:
 
 protected:
     void RenderMesh(const Scene* scene, const Mesh& mesh) noexcept;
+    void VisualizePointLight(const Scene* scene, size_t lightID) noexcept;
+
     void UploadCameraParams() noexcept;
     void UploadMeterialParams(const Scene* scene) noexcept;
     void UploadPointLights(const Scene* scene) noexcept;

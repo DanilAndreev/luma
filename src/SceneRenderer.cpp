@@ -84,9 +84,20 @@ void SceneRenderer::RenderFrame(const Scene *scene) noexcept {
 
     m_Ctx->ClearDepthStencilView(m_DSV, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
+    D3D11_VIEWPORT viewport{};
+    viewport.Width = m_TargetW;
+    viewport.Height = m_TargetH;
+    viewport.MinDepth = 0.0f;
+    viewport.MaxDepth = 1.0f;
+    viewport.TopLeftX = 0;
+    viewport.TopLeftY = 0;
+    m_Ctx->RSSetViewports(1, &viewport);
+
     for (size_t i = 0; i < scene->meshes.size(); ++i) {
         RenderMesh(scene, scene->meshes[i]);
     }
+
+    VisualizePointLight(scene, 0);
 }
 
 struct MeshIACache {
@@ -127,17 +138,23 @@ void SceneRenderer::RenderMesh(const Scene* scene, const Mesh& mesh) noexcept {
     m_Ctx->PSSetConstantBuffers(0, 1, &m_MaterialParamsCB);
     m_Ctx->PSSetShaderResources(0, 1, &m_PointLightsSRV);
 
-    D3D11_VIEWPORT viewport{};
-    viewport.Width = 800;
-    viewport.Height = 600;
-    viewport.MinDepth = 0.0f;
-    viewport.MaxDepth = 1.0f;
-    viewport.TopLeftX = 0;
-    viewport.TopLeftY = 0;
-    m_Ctx->RSSetViewports(1, &viewport);
     m_Ctx->RSSetState(m_RasterizerState);
 
     m_Ctx->DrawIndexed(mesh.indices.size(), 0, 0);
+}
+
+void SceneRenderer::VisualizePointLight(const Scene *scene, size_t lightID) noexcept {
+    m_Ctx->VSSetShader(g_SM.Get(VertexShaderID::PointLightVisualize), nullptr, 0);
+    m_Ctx->PSSetShader(g_SM.Get(PixelShaderID::PointLightVisualize), nullptr, 0);
+
+    m_Ctx->VSSetConstantBuffers(0, 1, &m_CameraParamsCB);
+    m_Ctx->VSSetShaderResources(0, 1, &m_PointLightsSRV);
+
+    m_Ctx->PSSetShaderResources(0, 1, &m_PointLightsSRV);
+
+    m_Ctx->RSSetState(m_RasterizerState);
+
+    m_Ctx->Draw(36, 0);
 }
 
 void SceneRenderer::UploadCameraParams() noexcept {

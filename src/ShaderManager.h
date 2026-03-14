@@ -2,11 +2,13 @@
 
 enum class PixelShaderID {
     Unity,
+    PointLightVisualize,
     Count,
 };
 
 enum class VertexShaderID {
     Unity,
+    PointLightVisualize,
     Count,
 };
 

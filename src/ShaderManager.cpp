@@ -11,11 +11,24 @@ void ShaderManager::Initialize(ID3D11Device* device) noexcept {
         auto bytecode = LoadFile(compiledShadersDir / "unity.ps.dxbc");
         device->CreatePixelShader(bytecode.data(), bytecode.size(), NULL, &Get(PixelShaderID::Unity));
     }
+    {
+        const char name[] = "pointLightVisualize.ps";
+        auto bytecode = LoadFile(compiledShadersDir / "pointLightVisualize.ps.dxbc");
+        device->CreatePixelShader(bytecode.data(), bytecode.size(), NULL, &Get(PixelShaderID::PointLightVisualize));
+        Get(PixelShaderID::PointLightVisualize)->SetPrivateData(WKPDID_D3DDebugObjectName, std::size(name), name);
+    }
 
     {
         auto bytecode = LoadFile(compiledShadersDir / "vertex.vs.dxbc");
         device->CreateVertexShader(bytecode.data(), bytecode.size(), NULL, &Get(VertexShaderID::Unity));
         m_VSSrc[static_cast<size_t>(VertexShaderID::Unity)] = std::move(bytecode);
+    }
+    {
+        const char name[] = "pointLightVisualize.vs";
+        auto bytecode = LoadFile(compiledShadersDir / "pointLightVisualize.vs.dxbc");
+        device->CreateVertexShader(bytecode.data(), bytecode.size(), NULL, &Get(VertexShaderID::PointLightVisualize));
+        Get(VertexShaderID::PointLightVisualize)->SetPrivateData(WKPDID_D3DDebugObjectName, std::size(name), name);
+        m_VSSrc[static_cast<size_t>(VertexShaderID::PointLightVisualize)] = std::move(bytecode);
     }
 
     for (size_t i = 0; i < static_cast<size_t>(PixelShaderID::Count); ++i) {

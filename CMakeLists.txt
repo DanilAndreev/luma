@@ -44,6 +44,7 @@ set_source_files_properties(${HLSL_SOURCE_FILES} PROPERTIES HEADER_FILE_ONLY TRU
 target_precompile_headers(luma PRIVATE src/pch.h)
 target_link_libraries(luma PUBLIC d3d11.lib)
 target_link_libraries(luma PUBLIC dxgi.lib)
+target_link_libraries(luma PUBLIC dxguid.lib)
 target_include_directories(luma PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/shaders)
 
 set(ASSIMP_NO_EXPORT ON)
