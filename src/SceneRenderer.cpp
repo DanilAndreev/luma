@@ -154,7 +154,7 @@ void SceneRenderer::VisualizePointLight(const Scene *scene, size_t lightID) noex
 
     m_Ctx->RSSetState(m_RasterizerState);
 
-    m_Ctx->Draw(36, 0);
+    m_Ctx->DrawInstanced(36, scene->pointLights.size(), 0, 0);
 }
 
 void SceneRenderer::UploadCameraParams() noexcept {

@@ -11,7 +11,7 @@ struct PSOut {
     float4 color: SV_Target;
 };
 
-VSOut VSMain(uint vtID: SV_VertexID) {
+VSOut VSMain(uint vtID: SV_VertexID, uint iID: SV_InstanceID) {
     float3 vertices[] ={
         //front
         float3(0.2f, 0.2f, 0.0f),    // top right
@@ -53,7 +53,7 @@ VSOut VSMain(uint vtID: SV_VertexID) {
     VSOut output;
     float3 cubeVertex = vertices[indices[vtID]] * size;
 
-    output.position = float4(cubeVertex, 1.0f) + float4(SRVPointLight[0].position.xyz, 0.0f);
+    output.position = float4(cubeVertex, 1.0f) + float4(SRVPointLight[iID].position.xyz, 0.0f);
     output.position = mul(output.position, viewProj);
     return output;
 }

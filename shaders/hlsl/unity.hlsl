@@ -13,7 +13,7 @@ struct PSOut
 PSOut PSMain(VSOut input) {
     PSOut output;
     output.color = CBMaterialParams.ambientColor * CBMaterialParams.ambientStrength;
-    output.color += SRVPointLight[0].color;
+    output.color += SRVPointLight[0].color * 0.5;
 
     return output;
 }
