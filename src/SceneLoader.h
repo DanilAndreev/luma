@@ -2,7 +2,7 @@
 #include "Scene.h"
 
 namespace Loader {
-    bool LoadScene(Scene& scene) noexcept;
+    bool LoadAssetsToScene(Scene& scene, const std::filesystem::path& filepath) noexcept;
 
     bool UploadSceneBuffersToGPU(Scene& scene, ID3D11Device* device) noexcept;
 }
