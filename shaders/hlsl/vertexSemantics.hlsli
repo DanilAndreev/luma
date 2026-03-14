@@ -15,6 +15,7 @@ struct VSOut
     float4 normal : NORMAL;
 //    float4 texcoor0 : TEXCOORD0;
 //    float4 color0 : COLOR0;
+    float3 worldPos: POSISION;
 };
 
 #endif // __LUMA_HLSL_VERTEX_SEMANTICS__

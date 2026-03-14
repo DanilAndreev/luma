@@ -8,21 +8,27 @@ namespace HLSL {
     struct CameraParams {
         float4x4 worldToCamera;
         float4x4 cameraToProjection;
+        float3 worldPos;
+        float padding;
     };
 
     struct MaterialParams {
-        float4 ambientColor;
-
-        float ambientStrength;
+        float shininess;
         uint pointLightCount;
+
         float2 padding;
     };
 
     struct PointLight {
+        float4 ambientColor;
+        float4 diffuseColor;
+        float4 specularColor;
         float4 position;
-        float4 color;
-        float shininess;
-        float3 padding;
+
+        float constantAttenuation;
+        float linearAttenuation;
+        float quadraticAttenuation;
+        float padding;
     };
 
 } /* namespace HLSL*/

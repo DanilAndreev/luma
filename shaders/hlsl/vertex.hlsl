@@ -12,5 +12,6 @@ VSOut VSMain(VSIn input) {
     output.normal = input.normal;
     //output.texcoor0 = input.texcoor0;
     //output.color0 = input.color0;
+    output.worldPos = input.position.xyz;
     return output;
 }

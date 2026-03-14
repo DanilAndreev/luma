@@ -135,7 +135,8 @@ void SceneRenderer::RenderMesh(const Scene* scene, const Mesh& mesh) noexcept {
 
     m_Ctx->VSSetConstantBuffers(0, 1, &m_CameraParamsCB);
 
-    m_Ctx->PSSetConstantBuffers(0, 1, &m_MaterialParamsCB);
+    ID3D11Buffer* PSCBs[] = {m_CameraParamsCB, m_MaterialParamsCB};
+    m_Ctx->PSSetConstantBuffers(0, std::size(PSCBs), PSCBs);
     m_Ctx->PSSetShaderResources(0, 1, &m_PointLightsSRV);
 
     m_Ctx->RSSetState(m_RasterizerState);
@@ -165,18 +166,15 @@ void SceneRenderer::UploadCameraParams() noexcept {
     XMFLOAT4X4 cameraToProjection = g_Cam.CameraToProjection(aspectRatio);
     XMStoreFloat4x4(&params.worldToCamera, XMMatrixTranspose(XMLoadFloat4x4(&worldToCamera)));
     XMStoreFloat4x4(&params.cameraToProjection, XMMatrixTranspose(XMLoadFloat4x4(&cameraToProjection)));
+    params.worldPos = g_Cam.GetPosition();
     m_Ctx->UpdateSubresource(m_CameraParamsCB, 0, nullptr, &params, sizeof(params), 0);
 }
 
 void SceneRenderer::UploadMeterialParams(const Scene* scene) noexcept {
     using namespace DirectX;
     HLSL::MaterialParams params{};
-    params.ambientColor = {1.0f, 0.0f, 0.0f, 1.0f};
-    // params.specularColor = {0.0f, 1.0f, 0.0f, 1.0f};
-    // params.phongColor = {0.0f, 0.0f, 1.0f, 1.0f};
-    params.ambientStrength = 0.1f;
+    params.shininess = 32;
     params.pointLightCount = scene->pointLights.size();
-    // params.shininess = 16.0f;
     m_Ctx->UpdateSubresource(m_MaterialParamsCB, 0, nullptr, &params, sizeof(params), 0);
 }
 
@@ -188,8 +186,13 @@ void SceneRenderer::UploadPointLights(const Scene *scene) noexcept {
     lights.resize(scene->pointLights.size());
     for (size_t i = 0; i < scene->pointLights.size(); ++i) {
         lights[i].position = scene->pointLights[i].position;
-        lights[i].color = scene->pointLights[i].color;
-        lights[i].shininess = 16;
+        // lights[i].color = scene->pointLights[i].color;
+        lights[i].ambientColor = {0.01f, 0.01f, 0.01f, 1.0f};
+        lights[i].diffuseColor = {1.0f, 0.8f, 0.9f, 1.0f};
+        lights[i].specularColor = {0.7f, 1.00f, 0.8f, 1.0f};
+        lights[i].constantAttenuation = 1.0f;
+        lights[i].linearAttenuation = 0.14f;
+        lights[i].quadraticAttenuation = 0.07f;
     }
     m_Ctx->UpdateSubresource(m_PointLights, 0, nullptr, lights.data(), lights.size() * sizeof(lights[0]), 0);
 }
