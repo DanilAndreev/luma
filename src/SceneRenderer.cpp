@@ -82,7 +82,11 @@ void SceneRenderer::RenderMesh(const Mesh& mesh) noexcept {
 }
 
 void SceneRenderer::UploadCameraParams() noexcept {
+    using namespace DirectX;
     HLSL::CameraParams cameraParams{};
-    cameraParams.worldToCamera = g_Cam.ViewTransform();
+    XMFLOAT4X4 worldToCamera = g_Cam.ViewTransform();
+    XMFLOAT4X4 cameraToProjection = g_Cam.CameraToProjection();
+    XMStoreFloat4x4(&cameraParams.worldToCamera, XMMatrixTranspose(XMLoadFloat4x4(&worldToCamera)));
+    XMStoreFloat4x4(&cameraParams.cameraToProjection, XMMatrixTranspose(XMLoadFloat4x4(&cameraToProjection)));
     m_Ctx->UpdateSubresource(m_CameraParamsCB, 0, nullptr, &cameraParams, sizeof(cameraParams), 0);
 }

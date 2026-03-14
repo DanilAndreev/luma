@@ -7,6 +7,7 @@ namespace HLSL {
 
     struct CameraParams {
         float4x4 worldToCamera;
+        float4x4 cameraToProjection;
     };
 
 } /* namespace HLSL*/

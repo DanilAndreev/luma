@@ -12,6 +12,7 @@ public:
 
 public:
     DirectX::XMFLOAT4X4 ViewTransform() const;
+    DirectX::XMFLOAT4X4 CameraToProjection() const;
 
 protected:
     void CalculateFront();

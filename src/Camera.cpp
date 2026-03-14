@@ -64,10 +64,20 @@ DirectX::XMFLOAT4X4 Camera::ViewTransform() const {
     XMVECTOR front = XMLoadFloat3(&m_Front);
     XMVECTOR up = XMLoadFloat3(&m_WorldUp);
 
-    auto matrix = XMMatrixLookAtLH(pos, XMVectorAdd(pos, front), up);
+    // auto matrix = XMMatrixLookAtLH(pos, XMVectorAdd(pos, front), up);
+    auto matrix = XMMatrixLookToLH(pos, front, up);
     XMFLOAT4X4 outMatrix;
     XMStoreFloat4x4(&outMatrix, matrix);
     return outMatrix;
+}
+
+DirectX::XMFLOAT4X4 Camera::CameraToProjection() const {
+    using namespace DirectX;
+    float aspectRatio = static_cast<float>(800) / static_cast<float>(600);
+
+    XMFLOAT4X4 proj;
+    XMStoreFloat4x4(&proj, XMMatrixPerspectiveFovLH(XM_PIDIV4, aspectRatio, 0.01f, 100.0f));
+    return proj;
 }
 
 void Camera::CalculateFront() {
