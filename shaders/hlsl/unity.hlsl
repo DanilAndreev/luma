@@ -32,6 +32,9 @@ PSOut PSMain(VSOut input) {
     float4 objectColor = float4(1.0f, 0.5f, 0.0f, 1.0f); // TODO: load color from texmap
 
     PSOut output;
-    output.color = PointLight(input, SRVPointLight[0], viewDir, objectColor);
+    output.color = 0.0f;
+    for (uint i = 0; i < CBMaterialParams.pointLightCount; ++i) {
+        output.color = PointLight(input, SRVPointLight[i], viewDir, objectColor);
+    }
     return output;
 }
