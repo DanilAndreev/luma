@@ -179,7 +179,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR pCmdLine, int nCmdShow)
     g_SM.Initialize(device);
 
     Scene scn{};
-    Loader::LoadScene(scn);
+    Loader::LoadAssetsToScene(scn, "assets/beetle.obj");
+    //Loader::LoadAssetsToScene(scn, "assets/stanford-bunny.obj");
+//    Loader::LoadAssetsToScene(scn, "assets/cube.obj");
     Loader::UploadSceneBuffersToGPU(scn, device);
 
     SceneRenderer renderer{};

@@ -105,11 +105,11 @@ namespace Loader {
 		}
 	}
 
-    bool LoadScene(Scene& outScene) noexcept {
+    bool LoadAssetsToScene(Scene& outScene, const std::filesystem::path& filepath) noexcept {
         Assimp::Importer importer;
-
-		const auto flags = aiProcess_JoinIdenticalVertices | aiProcess_Triangulate | aiProcess_ConvertToLeftHanded | aiProcess_GenNormals | aiProcess_CalcTangentSpace;
-        const aiScene* pScene = importer.ReadFile("assets/stanford-bunny.obj", flags);
+		//aiProcess_JoinIdenticalVertices |
+		const auto flags = aiProcess_Triangulate | aiProcess_ConvertToLeftHanded | aiProcess_GenNormals | aiProcess_CalcTangentSpace;
+        const aiScene* pScene = importer.ReadFile(filepath.string(), flags);
 		assert(pScene && (pScene->mFlags & AI_SCENE_FLAGS_INCOMPLETE) == 0);
         if (pScene == nullptr)
             return false;
@@ -133,7 +133,7 @@ namespace Loader {
 			data.pSysMem = mesh.vertices.data();
 			device->CreateBuffer(&desc, &data, &mesh.vb);
 
-			desc.ByteWidth = mesh.indices.size();
+			desc.ByteWidth = mesh.indices.size() * sizeof(mesh.indices[0]);
 			desc.BindFlags = D3D11_BIND_INDEX_BUFFER;
 			data.pSysMem = mesh.indices.data();
 			device->CreateBuffer(&desc, &data, &mesh.ib);
