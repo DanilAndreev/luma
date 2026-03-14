@@ -3,7 +3,6 @@
 #include "ShaderTypes.hlsli"
 
 cbuffer CB_CameraParams : register(b0) { HLSL::CameraParams CBCameraParams; }
-//cbuffer CB_CameraParams : register(b3) { float4x4 mat; }
 
 VSOut VSMain(VSIn input) {
     VSOut output;

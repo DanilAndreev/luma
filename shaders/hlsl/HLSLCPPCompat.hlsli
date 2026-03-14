@@ -8,6 +8,9 @@
 #endif
 
 LUMA_CPP_ONLY(using float4 = DirectX::XMFLOAT4);
+LUMA_CPP_ONLY(using float3 = DirectX::XMFLOAT3);
+LUMA_CPP_ONLY(using float2 = DirectX::XMFLOAT2);
+LUMA_CPP_ONLY(using uint = uint32_t);
 LUMA_CPP_ONLY(using float4x4 = DirectX::XMFLOAT4X4);
 
 

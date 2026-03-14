@@ -71,12 +71,11 @@ DirectX::XMFLOAT4X4 Camera::ViewTransform() const {
     return outMatrix;
 }
 
-DirectX::XMFLOAT4X4 Camera::CameraToProjection() const {
+DirectX::XMFLOAT4X4 Camera::CameraToProjection(float aspect) const {
     using namespace DirectX;
-    float aspectRatio = static_cast<float>(800) / static_cast<float>(600);
 
     XMFLOAT4X4 proj;
-    XMStoreFloat4x4(&proj, XMMatrixPerspectiveFovLH(XM_PIDIV4, aspectRatio, 0.01f, 100.0f));
+    XMStoreFloat4x4(&proj, XMMatrixPerspectiveFovLH(XM_PIDIV4, aspect, 0.01f, 100.0f));
     return proj;
 }
 

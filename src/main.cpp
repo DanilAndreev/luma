@@ -182,10 +182,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR pCmdLine, int nCmdShow)
     Loader::LoadAssetsToScene(scn, "assets/beetle.obj");
     //Loader::LoadAssetsToScene(scn, "assets/stanford-bunny.obj");
 //    Loader::LoadAssetsToScene(scn, "assets/cube.obj");
+
+    scn.pointLights.emplace_back(PointLight{{1.0f, 0.0f, 1.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, 1.0f});
+
     Loader::UploadSceneBuffersToGPU(scn, device);
 
     SceneRenderer renderer{};
     renderer.Initialize(device, context);
+    renderer.SetTarget(framebufferRTV, 800, 600);
 
 
     // Main Loop
@@ -203,7 +207,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR pCmdLine, int nCmdShow)
 
         FLOAT backgroundColor[4] = { 0.1f, 0.2f, 0.6f, 1.0f };
         context->ClearRenderTargetView(framebufferRTV, backgroundColor);
-        renderer.RenderFrame(&scn, framebufferRTV);
+        renderer.RenderFrame(&scn);
         swapchain->Present(1, 0);
 
 

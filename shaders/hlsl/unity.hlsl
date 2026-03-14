@@ -1,4 +1,8 @@
 #include "vertexSemantics.hlsli"
+#include "ShaderTypes.hlsli"
+
+cbuffer CB_MaterialParams : register(b0) { HLSL::MaterialParams CBMaterialParams; }
+StructuredBuffer<HLSL::PointLight> SRVPointLight : register(t0);
 
 struct PSOut
 {
@@ -8,6 +12,8 @@ struct PSOut
 
 PSOut PSMain(VSOut input) {
     PSOut output;
-    output.color = float4(1.0f, 1.0f, 0.0f, 1.0f);
+    output.color = CBMaterialParams.ambientColor * CBMaterialParams.ambientStrength;
+    output.color += SRVPointLight[0].color;
+
     return output;
 }
