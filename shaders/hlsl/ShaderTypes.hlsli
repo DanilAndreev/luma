@@ -24,6 +24,9 @@ namespace HLSL {
     };
 
     struct DirectionalLight {
+        float4x4 worldToLightProj;
+        float4x4 worldToLight;
+        float4x4 lightToProj;
         float3 ambientColor;
         float padding1;
         float3 diffuseColor;
@@ -32,7 +35,6 @@ namespace HLSL {
         float padding3;
         float3 direction;
         float intensity;
-
     };
 
     struct PointLight {

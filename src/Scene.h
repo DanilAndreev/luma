@@ -134,6 +134,10 @@ struct DirectionalLight {
     DirectX::XMFLOAT3 specularColor = {1.0f, 1.0f, 1.0f};
     DirectX::XMFLOAT3 direction = {-1.0f, -1.0f, -1.0f};
     float intensity = 0.3;
+
+    DirectX::XMFLOAT4X4 worldToLightProj = {};
+    DirectX::XMFLOAT4X4 worldToLight = {};
+    DirectX::XMFLOAT4X4 lightToProj = {};
 };
 
 struct PointLight {

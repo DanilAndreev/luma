@@ -47,6 +47,46 @@ void SceneRenderer::Initialize(ID3D11Device *device, ID3D11DeviceContext *contex
         view.Buffer.ElementWidth = desc.ByteWidth / desc.StructureByteStride;
         device->CreateShaderResourceView(m_PointLights, &view, &m_PointLightsSRV);
     }
+
+    {
+        D3D11_SAMPLER_DESC desc{};
+        desc.AddressU = D3D11_TEXTURE_ADDRESS_BORDER;
+        desc.AddressV = D3D11_TEXTURE_ADDRESS_BORDER;
+        desc.AddressW = D3D11_TEXTURE_ADDRESS_BORDER;
+        desc.BorderColor[0] = 1.0f;
+        desc.MinLOD = 0;
+        desc.MaxLOD = 0;
+        m_Device->CreateSamplerState(&desc, &m_ShadowMapSMP);
+    }
+
+    {
+        D3D11_TEXTURE2D_DESC desc{};
+        desc.Format = DXGI_FORMAT_R32_TYPELESS;
+        desc.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
+        desc.CPUAccessFlags = 0;
+        desc.MiscFlags = 0;
+        desc.Width = SHADOW_MAP_DIM;
+        desc.Height = SHADOW_MAP_DIM;
+        desc.Usage = D3D11_USAGE_DEFAULT;
+        desc.ArraySize = 1;
+        desc.MipLevels = 1;
+        desc.SampleDesc.Count = 1;
+
+        m_Device->CreateTexture2D(&desc, nullptr, &m_DirLightShadowMapTex);
+
+        D3D11_DEPTH_STENCIL_VIEW_DESC dsvDesc{};
+        dsvDesc.Format = DXGI_FORMAT_D32_FLOAT;
+        dsvDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+        dsvDesc.Flags = 0;
+        dsvDesc.Texture2D.MipSlice = 0;
+        m_Device->CreateDepthStencilView(m_DirLightShadowMapTex, &dsvDesc, &m_DirLightShadowMapTexDSV);
+
+        D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc{};
+        srvDesc.Format = DXGI_FORMAT_R32_FLOAT;
+        srvDesc.ViewDimension = D3D10_1_SRV_DIMENSION_TEXTURE2D;
+        srvDesc.Texture2D.MipLevels = 1;
+        m_Device->CreateShaderResourceView(m_DirLightShadowMapTex, &srvDesc, &m_DirLightShadowMapTexSRV);
+    }
 }
 
 void SceneRenderer::SetTarget(ID3D11RenderTargetView *RTV, uint32_t w, uint32_t h) noexcept {
@@ -77,15 +117,43 @@ void SceneRenderer::SetTarget(ID3D11RenderTargetView *RTV, uint32_t w, uint32_t 
         m_Device->CreateDepthStencilView(m_DSVTexture, &view, &m_DSV);
     }
 
+    {
+        D3D11_TEXTURE2D_DESC desc{};
+        desc.Format = DXGI_FORMAT_R32G32B32A32_TYPELESS;
+        desc.BindFlags = D3D11_BIND_RENDER_TARGET;
+        desc.CPUAccessFlags = 0;
+        desc.MiscFlags = 0;
+        desc.Width = m_TargetW;
+        desc.Height = m_TargetH;
+        desc.Usage = D3D11_USAGE_DEFAULT;
+        desc.ArraySize = 1;
+        desc.MipLevels = 1;
+        desc.SampleDesc.Count = 1;
+
+        m_Device->CreateTexture2D(&desc, nullptr, &m_DebugTex);
+
+        D3D11_RENDER_TARGET_VIEW_DESC rtvDesc{};
+        rtvDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+        rtvDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
+        rtvDesc.Texture2D.MipSlice = 0;
+        m_Device->CreateRenderTargetView(m_DebugTex, &rtvDesc, &m_DebugTexRTV);
+
+    }
 }
 
-void SceneRenderer::RenderFrame(const Scene *scene) noexcept {
-    m_Ctx->OMSetRenderTargets(1, &m_RTV, m_DSV);
+void SceneRenderer::RenderFrame(Scene *scene) noexcept {
+    DirLightShadowPass(scene);
 
-    UploadCameraParams();
     UploadPointLights(scene);
     UploadLightParams(scene);
 
+    UploadCameraParams();
+
+    ID3D11RenderTargetView* RTVs[] = {m_RTV, m_DebugTexRTV};
+
+    FLOAT backgroundColor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+    m_Ctx->ClearRenderTargetView(m_DebugTexRTV, backgroundColor);
+    m_Ctx->OMSetRenderTargets(std::size(RTVs), RTVs, m_DSV);
     m_Ctx->ClearDepthStencilView(m_DSV, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
     D3D11_VIEWPORT viewport{};
@@ -104,17 +172,62 @@ void SceneRenderer::RenderFrame(const Scene *scene) noexcept {
     VisualizePointLight(scene, 0);
 }
 
+void SceneRenderer::DirLightShadowPass(Scene* scene) noexcept {
+    {
+        using namespace DirectX;
+        XMVECTOR front = XMLoadFloat3(&scene->directionalLight.direction);
+        XMVECTOR pos = XMVectorNegate(front);
+        XMVECTOR up = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
+
+        XMMATRIX worldToLight = XMMatrixLookToLH(pos, front, up);
+        XMMATRIX lightToProjection = XMMatrixOrthographicLH(10, 10,0.001f, 10.0f);
+        XMMATRIX worldToLightProj = XMMatrixMultiply(lightToProjection, worldToLight);
+
+        HLSL::CameraParams params{};
+        XMStoreFloat4x4(&params.worldToCamera, XMMatrixTranspose(worldToLight));
+        XMStoreFloat4x4(&params.cameraToProjection, XMMatrixTranspose(lightToProjection));
+        m_Ctx->UpdateSubresource(m_CameraParamsCB, 0, nullptr, &params, sizeof(params), 0);
+
+        //TODO: remove to scene update pass
+        XMStoreFloat4x4(&scene->directionalLight.worldToLightProj, XMMatrixTranspose(worldToLightProj));
+        scene->directionalLight.worldToLight = params.worldToCamera;
+        scene->directionalLight.lightToProj = params.cameraToProjection;
+    }
+    UploadLightParams(scene); // TODO: remove
+
+
+    m_Ctx->OMSetRenderTargets(0, nullptr, m_DirLightShadowMapTexDSV);
+    m_Ctx->ClearDepthStencilView(m_DirLightShadowMapTexDSV, D3D11_CLEAR_DEPTH, 1.0f, 0);
+
+    D3D11_VIEWPORT viewport{};
+    viewport.Width = SHADOW_MAP_DIM;
+    viewport.Height = SHADOW_MAP_DIM;
+    viewport.MinDepth = 0.0f;
+    viewport.MaxDepth = 1.0f;
+    viewport.TopLeftX = 0;
+    viewport.TopLeftY = 0;
+    m_Ctx->RSSetViewports(1, &viewport);
+
+    for (size_t i = 0; i < scene->meshes.size(); ++i) {
+        RenderMesh(scene, scene->meshes[i], true);
+    }
+}
+
 struct MeshIACache {
     //TODO: maybe move stides, array equal elements
     UINT vaStrides[VertexAttributesEntriesCount + 1] = {};
     UINT vaOffsets[VertexAttributesEntriesCount + 1] = {};
 };
 
-void SceneRenderer::RenderMesh(const Scene* scene, const Mesh& mesh) noexcept {
+void SceneRenderer::RenderMesh(const Scene* scene, const Mesh& mesh, bool depthOnly) noexcept {
     UploadMeshParams(scene, mesh);
 
     m_Ctx->VSSetShader(g_SM.Get(VertexShaderID::Unity), nullptr, 0);
-    m_Ctx->PSSetShader(g_SM.Get(PixelShaderID::Unity), nullptr, 0);
+    if (depthOnly) {
+        m_Ctx->PSSetShader(nullptr, nullptr, 0);
+    } else {
+        m_Ctx->PSSetShader(g_SM.Get(PixelShaderID::Unity), nullptr, 0);
+    }
 
     ID3D11Buffer* vertexBuffers[VertexAttributesEntriesCount] = {};
     MeshIACache meshIA = {};
@@ -137,12 +250,16 @@ void SceneRenderer::RenderMesh(const Scene* scene, const Mesh& mesh) noexcept {
     m_Ctx->IASetInputLayout(mesh.inputLayout);
     m_Ctx->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-    ID3D11Buffer* VSCBs[] = {m_CameraParamsCB, m_MeshParamsCB};
+    ID3D11Buffer* VSCBs[] = {m_CameraParamsCB, m_MeshParamsCB, m_LightParamsCB};
     m_Ctx->VSSetConstantBuffers(0, std::size(VSCBs), VSCBs);
 
-    ID3D11Buffer* PSCBs[] = {m_CameraParamsCB, m_MeshParamsCB, m_LightParamsCB};
-    m_Ctx->PSSetConstantBuffers(0, std::size(PSCBs), PSCBs);
-    m_Ctx->PSSetShaderResources(0, 1, &m_PointLightsSRV);
+    if (!depthOnly) {
+        ID3D11Buffer* PSCBs[] = {m_CameraParamsCB, m_MeshParamsCB, m_LightParamsCB};
+        m_Ctx->PSSetConstantBuffers(0, std::size(PSCBs), PSCBs);
+        ID3D11ShaderResourceView* PSSRVs[] = {m_PointLightsSRV, m_DirLightShadowMapTexSRV};
+        m_Ctx->PSSetShaderResources(0, std::size(PSSRVs), PSSRVs);
+        m_Ctx->PSSetSamplers(0, 1, &m_ShadowMapSMP);
+    }
 
     m_Ctx->RSSetState(m_RasterizerState);
 
@@ -193,6 +310,9 @@ void SceneRenderer::UploadLightParams(const Scene *scene) noexcept {
     params.dirLight.specularColor = scene->directionalLight.specularColor;
     params.dirLight.direction = scene->directionalLight.direction;
     params.dirLight.intensity = scene->directionalLight.intensity;
+    params.dirLight.worldToLightProj = scene->directionalLight.worldToLightProj;
+    params.dirLight.worldToLight = scene->directionalLight.worldToLight;
+    params.dirLight.lightToProj = scene->directionalLight.lightToProj;
     m_Ctx->UpdateSubresource(m_LightParamsCB, 0, nullptr, &params, sizeof(params), 0);
 }
 

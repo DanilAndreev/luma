@@ -4,6 +4,7 @@
 
 cbuffer CB_CameraParams : register(b0) { HLSL::CameraParams CBCameraParams; }
 cbuffer CB_MeshParams : register(b1) { HLSL::MeshParams CBMeshParams; }
+cbuffer CB_LightParams : register(b2) { HLSL::LightParams CBLightParams; }
 
 VSOut VSMain(VSIn input) {
     VSOut output;
@@ -14,6 +15,13 @@ VSOut VSMain(VSIn input) {
     output.normal = input.normal;
     //output.texcoor0 = input.texcoor0;
     //output.color0 = input.color0;
-    output.worldPos = input.position.xyz;
+    output.worldPos = mul(input.position, CBMeshParams.transform).xyz;
+
+
+
+    // output.lightPos = mul(input.position, CBLightParams.dirLight.worldToLightProj);
+    output.lightPos = mul(input.position, CBMeshParams.transform);
+    output.lightPos = mul(output.lightPos, CBLightParams.dirLight.worldToLight);
+    output.lightPos = mul(output.lightPos, CBLightParams.dirLight.lightToProj);
     return output;
 }

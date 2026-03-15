@@ -18,8 +18,8 @@ protected:
     void CalculateFront();
 
 protected:
-    DirectX::XMFLOAT2 m_Gimbal = {0.0f, -90.0f}; /// pitch, yaw
-    DirectX::XMFLOAT3 m_Position = {0.0f, 0.0f, 3.0f};
+    DirectX::XMFLOAT2 m_Gimbal = {-15.0f, -90.0f}; /// pitch, yaw
+    DirectX::XMFLOAT3 m_Position = {0.0f, 1.0f, 3.0f};
     DirectX::XMFLOAT3 m_Front = {0.0f, 0.0f, -1.0f};
     DirectX::XMFLOAT3 m_WorldUp = {0.0f, 1.0f, 0.0f};
 };

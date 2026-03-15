@@ -7,9 +7,14 @@ cbuffer CB_LightParams : register(b2) { HLSL::LightParams CBLightParams; }
 
 StructuredBuffer<HLSL::PointLight> SRVPointLight : register(t0);
 
+Texture2D<float> DirLightShadowMap : register(t1);
+
+SamplerState ShadowMapSMP : register(s0);
+
 struct PSOut
 {
-    float4 color : SV_Target;
+    float4 color : SV_Target0;
+    float4 debugColor : SV_Target1;
 };
 
 float3 PointLight(VSOut input, HLSL::PointLight light, float3 viewDir, float3 objectColor) {
@@ -28,7 +33,20 @@ float3 PointLight(VSOut input, HLSL::PointLight light, float3 viewDir, float3 ob
     return diffuse * attenuation + ambient * attenuation + specular * attenuation;
 }
 
+float4 ShadowCalculation(float4 posLightSpace)
+{
+    float3 projCoords = posLightSpace.xyz / posLightSpace.w;
+    projCoords.x = projCoords.x * 0.5f + 0.5f;
+    projCoords.y = projCoords.y * 0.5f + 0.5f;
+    projCoords.y = 1.0f - projCoords.y;
+
+    const float bias = 0.005;
+    float closestDepth = DirLightShadowMap.Sample(ShadowMapSMP, projCoords.xy).r;
+    return projCoords.z - bias > closestDepth ? 1.0 : 0.0;
+}
+
 float3 DirectionalLight(VSOut input, HLSL::DirectionalLight light, float3 viewDir, float3 objectColor) {
+
     float3 normal = normalize(input.normal.xyz);
     float3 lightDir = normalize(-light.direction);
     float diffuseStrength = max(dot(normal, lightDir), 0.0);
@@ -39,7 +57,13 @@ float3 DirectionalLight(VSOut input, HLSL::DirectionalLight light, float3 viewDi
     float3 ambient  = light.ambientColor * objectColor;
     float3 diffuse  = light.diffuseColor * diffuseStrength * objectColor;
     float3 specular = light.specularColor * specularStrength * objectColor;
-    return (diffuse + ambient + specular) * light.intensity;
+
+
+    // float4 lightSpacePos = mul(float4(input.worldPos, 1.0f), mul(light.worldToLight, light.lightToProj) );
+    float4 lightSpacePos = input.lightPos;
+    float shadow = ShadowCalculation(lightSpacePos).r;
+
+    return (ambient + (1.0f - shadow) * (diffuse + specular)) * light.intensity;
 }
 
 PSOut PSMain(VSOut input) {
@@ -53,5 +77,7 @@ PSOut PSMain(VSOut input) {
         output.color += float4(PointLight(input, SRVPointLight[i], viewDir, objectColor.xyz), 0.0f);
     }
     output.color += float4(DirectionalLight(input, CBLightParams.dirLight, viewDir, objectColor.xyz), 0.0f);
+
+    output.debugColor = ShadowCalculation(input.lightPos);
     return output;
 }
