@@ -2,90 +2,79 @@
 #include <DirectXMath.h>
 #include <d3d11.h>
 #include <dxgi.h>
-#include <windows.h>
 
+#include "Win/BaseWindow.h"
 
 #include "Scene.h"
 #include "SceneLoader.h"
 #include "SceneRenderer.h"
 #include "ShaderManager.h"
 
-
-template <class DERIVED_TYPE>
-class BaseWindow
-{
-public:
-    static LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
-    {
-        DERIVED_TYPE *pThis = NULL;
-
-        if (uMsg == WM_NCCREATE)
-        {
-            CREATESTRUCT* pCreate = (CREATESTRUCT*)lParam;
-            pThis = (DERIVED_TYPE*)pCreate->lpCreateParams;
-            SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)pThis);
-
-            pThis->m_hwnd = hwnd;
-        }
-        else
-        {
-            pThis = (DERIVED_TYPE*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
-        }
-        if (pThis)
-        {
-            return pThis->HandleMessage(uMsg, wParam, lParam);
-        }
-        else
-        {
-            return DefWindowProc(hwnd, uMsg, wParam, lParam);
-        }
+KeyID WinKeyToKeyID(WPARAM wParam) noexcept {
+    switch (wParam) {
+        case VK_LEFT:
+            return KeyID::Left;
+        case VK_RIGHT:
+            return KeyID::Right;
+        case VK_UP:
+            return KeyID::Up;
+        case VK_DOWN:
+            return KeyID::Down;
+        case 'Q':
+            return KeyID::Q;
+        case 'W':
+            return KeyID::W;
+        case 'E':
+            return KeyID::E;
+        case 'A':
+            return KeyID::A;
+        case 'S':
+            return KeyID::S;
+        case 'D':
+            return KeyID::D;
+        case 'Z':
+            return KeyID::Z;
+        case 'X':
+            return KeyID::X;
+        case 'C':
+            return KeyID::C;
+        default:
+            return KeyID::None;
     }
-
-    BaseWindow() : m_hwnd(NULL) { }
-
-    BOOL Create(
-        LPCSTR lpWindowName,
-        DWORD dwStyle,
-        DWORD dwExStyle = 0,
-        int x = CW_USEDEFAULT,
-        int y = CW_USEDEFAULT,
-        int nWidth = CW_USEDEFAULT,
-        int nHeight = CW_USEDEFAULT,
-        HWND hWndParent = 0,
-        HMENU hMenu = 0
-        )
-    {
-        WNDCLASS wc = {0};
-
-        wc.lpfnWndProc   = DERIVED_TYPE::WindowProc;
-        wc.hInstance     = GetModuleHandle(NULL);
-        wc.lpszClassName = ClassName();
-
-        RegisterClass(&wc);
-
-        m_hwnd = CreateWindowEx(
-            dwExStyle, ClassName(), lpWindowName, dwStyle, x, y,
-            nWidth, nHeight, hWndParent, hMenu, GetModuleHandle(NULL), this
-            );
-
-        return (m_hwnd ? TRUE : FALSE);
-    }
-
-    HWND Window() const { return m_hwnd; }
-
-protected:
-    virtual LPCSTR  ClassName() const = 0;
-    virtual LRESULT HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) = 0;
-
-protected:
-    HWND m_hwnd;
-};
+}
 
 class MainWindow : public BaseWindow<MainWindow>
 {
 public:
     LPCSTR  ClassName() const { return "MainWindow"; }
-    LRESULT HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam);
+    LRESULT HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
+        switch (uMsg) {
+            case WM_DESTROY:
+                PostQuitMessage(0);
+                return 0;
+
+            case WM_PAINT: {
+                PAINTSTRUCT ps;
+                HDC hdc = BeginPaint(m_hwnd, &ps);
+                FillRect(hdc, &ps.rcPaint, (HBRUSH) (COLOR_WINDOW + 1));
+                EndPaint(m_hwnd, &ps);
+                return 0;
+            }
+            case WM_KEYDOWN: {
+                g_Input.Signal(WinKeyToKeyID(wParam), true);
+                return 0;
+            }
+            case WM_KEYUP: {
+                g_Input.Signal(WinKeyToKeyID(wParam), false);
+                return 0;
+            }
+
+
+            default:
+                return DefWindowProc(m_hwnd, uMsg, wParam, lParam);
+        }
+        return TRUE;
+    }
 };
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR pCmdLine, int nCmdShow)
@@ -115,21 +104,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR pCmdLine, int nCmdShow)
     ID3D11DeviceContext* context;
     D3D_FEATURE_LEVEL featureLevels[] = { D3D_FEATURE_LEVEL_11_0 };
     UINT creationFlags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
-// #if defined(_DEBUG)
-//     creationFlags |= D3D11_CREATE_DEVICE_DEBUG;
-// #endif
 
     HRESULT hResult = D3D11CreateDevice(selectedAdapter, D3D_DRIVER_TYPE_UNKNOWN,
                                         0, creationFlags,
                                         featureLevels, ARRAYSIZE(featureLevels),
                                         D3D11_SDK_VERSION, &device,
                                         0, &context);
-
-    // HRESULT hResult = D3D11CreateDevice(NULL, D3D_DRIVER_TYPE_HARDWARE,
-    //                                 0, creationFlags,
-    //                                 featureLevels, ARRAYSIZE(featureLevels),
-    //                                 D3D11_SDK_VERSION, &device,
-    //                                 0, &context);
 
     if(FAILED(hResult)){
         assert(0 && "D3D11CreateDevice() failed");
@@ -184,8 +164,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR pCmdLine, int nCmdShow)
 //    Loader::LoadAssetsToScene(scn, "assets/cube.obj");
 
     scn.pointLights.emplace_back(PointLight{{1.0f, 1.0f, 1.0f, 1.0f}, {1.0f, 0.0f, 1.0f, 1.0f}, 1.0f});
-    scn.pointLights.emplace_back(PointLight{{1.0f, 1.0f, 1.0f, 1.0f}, {1.0f, 3.0f, 0.0f, 1.0f}, 1.0f});
-    scn.pointLights.emplace_back(PointLight{{1.0f, 1.0f, 1.0f, 1.0f}, {3.0f, 3.0f, 0.0f, 1.0f}, 1.0f});
+    scn.pointLights.emplace_back(PointLight{{1.0f, 0.0f, 1.0f, 1.0f}, {1.0f, 3.0f, 0.0f, 1.0f}, 1.0f});
+    scn.pointLights.emplace_back(PointLight{{0.0f, 1.0f, 1.0f, 1.0f}, {3.0f, 3.0f, 0.0f, 1.0f}, 1.0f});
 
     Loader::UploadSceneBuffersToGPU(scn, device);
 
@@ -211,104 +191,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR pCmdLine, int nCmdShow)
         context->ClearRenderTargetView(framebufferRTV, backgroundColor);
         renderer.RenderFrame(&scn);
         swapchain->Present(1, 0);
-
-
-        DirectX::XMFLOAT3 movementDelta{};
-        DirectX::XMFLOAT2 rotationDelta{};
-        float deltaTime = 0.1;
-        if (g_Input.Pressed(KeyID::A)) {
-            movementDelta.x = 1;
-        }
-        if (g_Input.Pressed(KeyID::D)) {
-            movementDelta.x = -1;
-        }
-        if (g_Input.Pressed(KeyID::W)) {
-            movementDelta.z = 1;
-        }
-        if (g_Input.Pressed(KeyID::S)) {
-            movementDelta.z = -1;
-        }
-        if (g_Input.Pressed(KeyID::Up)) {
-            rotationDelta.x = 10;
-        }
-        if (g_Input.Pressed(KeyID::Down)) {
-            rotationDelta.x = -10;
-        }
-        if (g_Input.Pressed(KeyID::Left)) {
-            rotationDelta.y = 10;
-        }
-        if (g_Input.Pressed(KeyID::Right)) {
-            rotationDelta.y = -10;
-        }
-        if (movementDelta.x + movementDelta.y + movementDelta.z != 0) {
-            g_Cam.MoveBy({movementDelta.x * deltaTime, movementDelta.y * deltaTime, movementDelta.z * deltaTime});
-        }
-        g_Cam.RotateBy({rotationDelta.x * deltaTime, rotationDelta.y * deltaTime});
+        g_InputManager.Tick();
     }
 
     device->Release();
     DXGIFactory->Release();
     return 0;
-}
-
-KeyID WinKeyToKeyID(WPARAM wParam) noexcept {
-    switch (wParam) {
-        case VK_LEFT:
-            return KeyID::Left;
-        case VK_RIGHT:
-            return KeyID::Right;
-        case VK_UP:
-            return KeyID::Up;
-        case VK_DOWN:
-            return KeyID::Down;
-        case 'Q':
-            return KeyID::Q;
-        case 'W':
-            return KeyID::W;
-        case 'E':
-            return KeyID::E;
-        case 'A':
-            return KeyID::A;
-        case 'S':
-            return KeyID::S;
-        case 'D':
-            return KeyID::D;
-        case 'Z':
-            return KeyID::Z;
-        case 'X':
-            return KeyID::X;
-        case 'C':
-            return KeyID::C;
-        default:
-            return KeyID::None;
-    }
-}
-
-LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
-    switch (uMsg) {
-        case WM_DESTROY:
-            PostQuitMessage(0);
-            return 0;
-
-        case WM_PAINT: {
-            PAINTSTRUCT ps;
-            HDC hdc = BeginPaint(m_hwnd, &ps);
-            FillRect(hdc, &ps.rcPaint, (HBRUSH) (COLOR_WINDOW + 1));
-            EndPaint(m_hwnd, &ps);
-            return 0;
-        }
-        case WM_KEYDOWN: {
-            g_Input.Signal(WinKeyToKeyID(wParam), true);
-            return 0;
-        }
-        case WM_KEYUP: {
-            g_Input.Signal(WinKeyToKeyID(wParam), false);
-            return 0;
-        }
-
-
-        default:
-            return DefWindowProc(m_hwnd, uMsg, wParam, lParam);
-    }
-    return TRUE;
 }

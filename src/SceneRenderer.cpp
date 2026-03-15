@@ -186,9 +186,8 @@ void SceneRenderer::UploadPointLights(const Scene *scene) noexcept {
     lights.resize(scene->pointLights.size());
     for (size_t i = 0; i < scene->pointLights.size(); ++i) {
         lights[i].position = scene->pointLights[i].position;
-        // lights[i].color = scene->pointLights[i].color;
         lights[i].ambientColor = {0.01f, 0.01f, 0.01f, 1.0f};
-        lights[i].diffuseColor = {1.0f, 0.8f, 0.9f, 1.0f};
+        lights[i].diffuseColor = scene->pointLights[i].color;
         lights[i].specularColor = {0.7f, 1.00f, 0.8f, 1.0f};
         lights[i].constantAttenuation = 1.0f;
         lights[i].linearAttenuation = 0.14f;

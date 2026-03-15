@@ -3,3 +3,4 @@
 ShaderManager g_SM{};
 InputDeviceState g_Input{};
 Camera g_Cam{};
+InputManager g_InputManager{};

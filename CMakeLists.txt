@@ -15,8 +15,9 @@ set(HEADER_FILES
         src/Camera.h
         src/SceneLoader.h
         src/ShaderManager.h
-        src/InputDeviceState.h
+        src/Input/InputDeviceState.h
         src/SceneRenderer.h
+        src/Win/BaseWindow.h
         )
 
 set(SOURCE_FILES
@@ -26,8 +27,9 @@ set(SOURCE_FILES
         src/Camera.cpp
         src/SceneLoader.cpp
         src/ShaderManager.cpp
-        src/InputDeviceState.cpp
+        src/Input/InputDeviceState.cpp
         src/SceneRenderer.cpp
+        src/Input/InputManager.cpp
         )
 
 set(HLSL_SOURCE_FILES
@@ -45,6 +47,7 @@ target_precompile_headers(luma PRIVATE src/pch.h)
 target_link_libraries(luma PUBLIC d3d11.lib)
 target_link_libraries(luma PUBLIC dxgi.lib)
 target_link_libraries(luma PUBLIC dxguid.lib)
+target_include_directories(luma PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
 target_include_directories(luma PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/shaders)
 
 set(ASSIMP_NO_EXPORT ON)
