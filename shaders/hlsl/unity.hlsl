@@ -41,8 +41,21 @@ float ShadowCalculation(float4 posLightSpace)
     projCoords.y = 1.0f - projCoords.y;
 
     const float bias = 0.005;
-    float closestDepth = DirLightShadowMap.Sample(ShadowMapSMP, projCoords.xy).r;
-    return projCoords.z - bias > closestDepth ? 1.0 : 0.0;
+
+    float shadow = 0.0;
+    float2 texelSize = 1.0 / 8192.0f;
+
+    [unroll]
+    for(int x = -1; x <= 1; ++x)
+    {
+        [unroll]
+        for(int y = -1; y <= 1; ++y)
+        {
+            float pcfDepth = DirLightShadowMap.Sample(ShadowMapSMP, projCoords.xy + float2(x, y) * texelSize);
+            shadow += projCoords.z - bias > pcfDepth ? 1.0f : 0.0f;
+        }
+    }
+    return shadow / 9.0f;
 }
 
 float3 DirectionalLight(VSOut input, HLSL::DirectionalLight light, float3 viewDir, float3 objectColor) {
