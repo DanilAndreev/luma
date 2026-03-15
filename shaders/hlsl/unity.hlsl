@@ -15,8 +15,8 @@ float3 PointLight(VSOut input, HLSL::PointLight light, float3 viewDir, float3 ob
     float3 lightDir = normalize(light.position.xyz - input.worldPos);
     float diffuseStrength = max(dot(normal, lightDir), 0.0);
 
-    float3 reflectDir = reflect(-lightDir, normal);
-    float specularStrength = pow(max(dot(viewDir, reflectDir), 0.0), CBMaterialParams.shininess);
+    float3 halfwayDir = normalize(lightDir + viewDir);
+    float specularStrength = pow(max(dot(normal, halfwayDir), 0.0), CBMaterialParams.shininess);
     float lightDistance = length(light.position.xyz - input.worldPos);
     float attenuation = 1.0 / (light.constantAttenuation + light.linearAttenuation * lightDistance + light.quadraticAttenuation * (lightDistance * lightDistance));
 
