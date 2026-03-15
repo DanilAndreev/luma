@@ -13,7 +13,8 @@ protected:
     void VisualizePointLight(const Scene* scene, size_t lightID) noexcept;
 
     void UploadCameraParams() noexcept;
-    void UploadMeterialParams(const Scene* scene) noexcept;
+    void UploadMeshParams(const Scene* scene, const Mesh& mesh) noexcept;
+    void UploadLightParams(const Scene* scene) noexcept;
     void UploadPointLights(const Scene* scene) noexcept;
 
 protected:
@@ -23,7 +24,8 @@ protected:
     ID3D11RasterizerState* m_RasterizerState = nullptr;
 
     ID3D11Buffer* m_CameraParamsCB = nullptr;
-    ID3D11Buffer* m_MaterialParamsCB = nullptr;
+    ID3D11Buffer* m_MeshParamsCB = nullptr;
+    ID3D11Buffer* m_LightParamsCB = nullptr;
     ID3D11Buffer* m_PointLights = nullptr;
     ID3D11ShaderResourceView* m_PointLightsSRV = nullptr;
 

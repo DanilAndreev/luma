@@ -2,7 +2,9 @@
 #include "ShaderTypes.hlsli"
 
 cbuffer CB_CameraParams : register(b0) { HLSL::CameraParams CBCameraParams; }
-cbuffer CB_MaterialParams : register(b1) { HLSL::MaterialParams CBMaterialParams; }
+cbuffer CB_MeshParams : register(b1) { HLSL::MeshParams CBMeshParams; }
+cbuffer CB_LightParams : register(b2) { HLSL::LightParams CBLightParams; }
+
 StructuredBuffer<HLSL::PointLight> SRVPointLight : register(t0);
 
 struct PSOut
@@ -16,7 +18,7 @@ float3 PointLight(VSOut input, HLSL::PointLight light, float3 viewDir, float3 ob
     float diffuseStrength = max(dot(normal, lightDir), 0.0);
 
     float3 halfwayDir = normalize(lightDir + viewDir);
-    float specularStrength = pow(max(dot(normal, halfwayDir), 0.0), CBMaterialParams.shininess);
+    float specularStrength = pow(max(dot(normal, halfwayDir), 0.0), CBMeshParams.material.shininess);
     float lightDistance = length(light.position.xyz - input.worldPos);
     float attenuation = 1.0 / (light.constantAttenuation + light.linearAttenuation * lightDistance + light.quadraticAttenuation * (lightDistance * lightDistance));
 
@@ -33,7 +35,7 @@ PSOut PSMain(VSOut input) {
 
     PSOut output;
     output.color = 0.0f;
-    for (uint i = 0; i < CBMaterialParams.pointLightCount; ++i) {
+    for (uint i = 0; i < CBLightParams.pointLightCount; ++i) {
         output.color += float4(PointLight(input, SRVPointLight[i], viewDir, objectColor.xyz), 0.0f);
     }
     return output;

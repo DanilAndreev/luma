@@ -128,6 +128,13 @@ struct MeshInstance {
     bool opaque;
 };
 
+struct DirectionalLight {
+    DirectX::XMFLOAT3 ambientColor = {0.1f, 0.1f, 0.1f};
+    DirectX::XMFLOAT3 diffuseColor = {1.0f, 1.0f, 1.0f};
+    DirectX::XMFLOAT3 specularColor = {1.0f, 1.0f, 1.0f};
+    DirectX::XMFLOAT3 direction = {-1.0f, -1.0f, -1.0f};
+};
+
 struct PointLight {
     DirectX::XMFLOAT3 ambientColor = {0.1f, 0.1f, 0.1f};
     DirectX::XMFLOAT3 diffuseColor = {1.0f, 1.0f, 1.0f};
@@ -143,5 +150,6 @@ struct Scene {
     std::vector<Mesh> meshes{};
     std::vector<MeshInstance> instances{};
     std::vector<PointLight> pointLights{};
+    DirectionalLight directionalLight{};
 };
 

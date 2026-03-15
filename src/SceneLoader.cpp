@@ -7,7 +7,7 @@
 
 
 namespace Loader {
-	static Mesh processMesh(aiMesh* mesh, const aiScene* scene) {
+	static Mesh processMesh(aiMesh* mesh, const aiScene* scene, DirectX::XMFLOAT4X4 transform) {
 		// static_assert(std::is_same_v<decltype(mesh->mVertices.x), bool>);
 		
 		Mesh result{};
@@ -87,36 +87,31 @@ namespace Loader {
 		//	textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
 		//}
 
-		DirectX::XMStoreFloat4x4(&result.transform, DirectX::XMMatrixIdentity());
-
-
+		result.transform = transform;
 
 		return result;
 	}
 
-	static void processNode(aiNode* node, const aiScene* assimpScene, Scene& outScene) {
+	static void processNode(aiNode* node, const aiScene* assimpScene, Scene& outScene, DirectX::XMFLOAT4X4 transform) {
 		for (size_t i = 0; i < node->mNumMeshes; i++) {
 			aiMesh* mesh = assimpScene->mMeshes[node->mMeshes[i]];
-			outScene.meshes.push_back(processMesh(mesh, assimpScene));
+			outScene.meshes.push_back(processMesh(mesh, assimpScene, transform));
 		}
 
 		for (size_t i = 0; i < node->mNumChildren; i++) {
-			processNode(node->mChildren[i], assimpScene, outScene);
+			processNode(node->mChildren[i], assimpScene, outScene, transform);
 		}
 	}
 
-    bool LoadAssetsToScene(Scene& outScene, const std::filesystem::path& filepath) noexcept {
+    bool LoadAssetsToScene(Scene& outScene, const std::filesystem::path& filepath, DirectX::XMFLOAT4X4 transform) noexcept {
         Assimp::Importer importer;
-		//aiProcess_JoinIdenticalVertices |
-		const auto flags = aiProcess_Triangulate | aiProcess_ConvertToLeftHanded | aiProcess_GenNormals | aiProcess_CalcTangentSpace;
+		const auto flags = aiProcess_JoinIdenticalVertices | aiProcess_Triangulate | aiProcess_ConvertToLeftHanded | aiProcess_GenNormals | aiProcess_CalcTangentSpace;
         const aiScene* pScene = importer.ReadFile(filepath.string(), flags);
 		assert(pScene && (pScene->mFlags & AI_SCENE_FLAGS_INCOMPLETE) == 0);
         if (pScene == nullptr)
             return false;
 
-        processNode(pScene->mRootNode, pScene, outScene);
-
-
+        processNode(pScene->mRootNode, pScene, outScene, transform);
         return true;
     }
 

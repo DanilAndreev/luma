@@ -24,8 +24,11 @@ void SceneRenderer::Initialize(ID3D11Device *device, ID3D11DeviceContext *contex
         desc.StructureByteStride = 0;
         device->CreateBuffer(&desc, nullptr, &m_CameraParamsCB);
 
-        desc.ByteWidth = sizeof(HLSL::MaterialParams);
-        device->CreateBuffer(&desc, nullptr, &m_MaterialParamsCB);
+        desc.ByteWidth = sizeof(HLSL::MeshParams);
+        device->CreateBuffer(&desc, nullptr, &m_MeshParamsCB);
+
+        desc.ByteWidth = sizeof(HLSL::LightParams);
+        device->CreateBuffer(&desc, nullptr, &m_LightParamsCB);
     }
 
     {
@@ -81,6 +84,7 @@ void SceneRenderer::RenderFrame(const Scene *scene) noexcept {
 
     UploadCameraParams();
     UploadPointLights(scene);
+    UploadLightParams(scene);
 
     m_Ctx->ClearDepthStencilView(m_DSV, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
@@ -107,7 +111,7 @@ struct MeshIACache {
 };
 
 void SceneRenderer::RenderMesh(const Scene* scene, const Mesh& mesh) noexcept {
-    UploadMeterialParams(scene);
+    UploadMeshParams(scene, mesh);
 
     m_Ctx->VSSetShader(g_SM.Get(VertexShaderID::Unity), nullptr, 0);
     m_Ctx->PSSetShader(g_SM.Get(PixelShaderID::Unity), nullptr, 0);
@@ -133,9 +137,10 @@ void SceneRenderer::RenderMesh(const Scene* scene, const Mesh& mesh) noexcept {
     m_Ctx->IASetInputLayout(mesh.inputLayout);
     m_Ctx->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-    m_Ctx->VSSetConstantBuffers(0, 1, &m_CameraParamsCB);
+    ID3D11Buffer* VSCBs[] = {m_CameraParamsCB, m_MeshParamsCB};
+    m_Ctx->VSSetConstantBuffers(0, std::size(VSCBs), VSCBs);
 
-    ID3D11Buffer* PSCBs[] = {m_CameraParamsCB, m_MaterialParamsCB};
+    ID3D11Buffer* PSCBs[] = {m_CameraParamsCB, m_MeshParamsCB, m_LightParamsCB};
     m_Ctx->PSSetConstantBuffers(0, std::size(PSCBs), PSCBs);
     m_Ctx->PSSetShaderResources(0, 1, &m_PointLightsSRV);
 
@@ -170,12 +175,24 @@ void SceneRenderer::UploadCameraParams() noexcept {
     m_Ctx->UpdateSubresource(m_CameraParamsCB, 0, nullptr, &params, sizeof(params), 0);
 }
 
-void SceneRenderer::UploadMeterialParams(const Scene* scene) noexcept {
+void SceneRenderer::UploadMeshParams(const Scene* scene, const Mesh& mesh) noexcept {
     using namespace DirectX;
-    HLSL::MaterialParams params{};
-    params.shininess = 32;
+    HLSL::MeshParams params{};
+    params.material.shininess = 32.0f;
+    XMMATRIX transform = XMLoadFloat4x4(&mesh.transform);
+    XMStoreFloat4x4(&params.transform, XMMatrixTranspose(transform));
+    m_Ctx->UpdateSubresource(m_MeshParamsCB, 0, nullptr, &params, sizeof(params), 0);
+}
+
+void SceneRenderer::UploadLightParams(const Scene *scene) noexcept {
+    using namespace DirectX;
+    HLSL::LightParams params{};
     params.pointLightCount = scene->pointLights.size();
-    m_Ctx->UpdateSubresource(m_MaterialParamsCB, 0, nullptr, &params, sizeof(params), 0);
+    params.dirLight.ambientColor = scene->directionalLight.ambientColor;
+    params.dirLight.diffuseColor = scene->directionalLight.diffuseColor;
+    params.dirLight.specularColor = scene->directionalLight.specularColor;
+    params.dirLight.direction = scene->directionalLight.direction;
+    m_Ctx->UpdateSubresource(m_LightParamsCB, 0, nullptr, &params, sizeof(params), 0);
 }
 
 void SceneRenderer::UploadPointLights(const Scene *scene) noexcept {

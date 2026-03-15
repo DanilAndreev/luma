@@ -14,9 +14,25 @@ namespace HLSL {
 
     struct MaterialParams {
         float shininess;
-        uint pointLightCount;
 
-        float2 padding;
+        float3 padding;
+    };
+
+    struct MeshParams {
+        float4x4 transform;
+        MaterialParams material;
+    };
+
+    struct DirectionalLight {
+        float3 ambientColor;
+        float padding1;
+        float3 diffuseColor;
+        float padding2;
+        float3 specularColor;
+        float padding3;
+        float3 direction;
+        float padding4;
+
     };
 
     struct PointLight {
@@ -29,6 +45,12 @@ namespace HLSL {
         float4 position;
     };
 
+    struct LightParams {
+        DirectionalLight dirLight;
+
+        uint pointLightCount;
+        float3 padding;
+    };
 } /* namespace HLSL*/
 
 #endif // __LUMA_HLSL_SHADER_TYPES__

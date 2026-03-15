@@ -10,6 +10,22 @@
 #include "SceneRenderer.h"
 #include "ShaderManager.h"
 
+DirectX::XMFLOAT4X4 TransformDeg(DirectX::XMFLOAT3 p, DirectX::XMFLOAT3 r = {}, DirectX::XMFLOAT3 s = {1, 1, 1}) noexcept {
+    using namespace DirectX;
+    XMVECTOR scaleVec = XMVectorSet(s.x, s.y, s.z, 0.0f);
+    XMVECTOR eulerVec = XMVectorSet(XMConvertToRadians(r.x), XMConvertToRadians(r.y), XMConvertToRadians(r.z), 0.0f);
+    XMVECTOR posVec   = XMVectorSet(p.x, p.y, p.z, 1.0f);
+
+    XMMATRIX mScale    = XMMatrixScalingFromVector(scaleVec);
+    XMMATRIX mRotation = XMMatrixRotationRollPitchYawFromVector(eulerVec);
+    XMMATRIX mTranslate = XMMatrixTranslationFromVector(posVec);
+
+    XMMATRIX transform = mScale * mRotation * mTranslate;
+    XMFLOAT4X4 result;
+    XMStoreFloat4x4(&result, transform);
+    return result;
+}
+
 KeyID WinKeyToKeyID(WPARAM wParam) noexcept {
     switch (wParam) {
         case VK_LEFT:
@@ -159,13 +175,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR pCmdLine, int nCmdShow)
     g_SM.Initialize(device);
 
     Scene scn{};
-    // Loader::LoadAssetsToScene(scn, "assets/beetle.obj");
-    //Loader::LoadAssetsToScene(scn, "assets/stanford-bunny.obj");
-    Loader::LoadAssetsToScene(scn, "assets/cube.obj");
+    Loader::LoadAssetsToScene(scn, "assets/beetle.obj", TransformDeg({0, -0.2, 0}));
+    Loader::LoadAssetsToScene(scn, "assets/stanford-bunny.obj", TransformDeg({0.2, 0.6, 0}));
+    Loader::LoadAssetsToScene(scn, "assets/cube.obj", TransformDeg({0, 0, 0}, {}, {4, 0.01, 4}));
 
     {
         PointLight light{};
-        light.position = {1.0f, 0.0f, 1.0f, 1.0f};
+        light.position = {1.0f, 1.0f, 1.0f, 1.0f};
+        light.constantAttenuation = 10.0;
         scn.pointLights.push_back(light);
 
         light.position = {1.0f, 3.0f, 0.0f, 1.0f};

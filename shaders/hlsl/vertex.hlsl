@@ -3,12 +3,14 @@
 #include "ShaderTypes.hlsli"
 
 cbuffer CB_CameraParams : register(b0) { HLSL::CameraParams CBCameraParams; }
+cbuffer CB_MeshParams : register(b1) { HLSL::MeshParams CBMeshParams; }
 
 VSOut VSMain(VSIn input) {
     VSOut output;
 
-    float4x4 viewProj = mul(CBCameraParams.worldToCamera, CBCameraParams.cameraToProjection);
+    float4x4 viewProj = mul(mul(CBMeshParams.transform, CBCameraParams.worldToCamera), CBCameraParams.cameraToProjection);
     output.position = mul(input.position, viewProj);
+    //TODO: calculate normal matrix and transform normals.
     output.normal = input.normal;
     //output.texcoor0 = input.texcoor0;
     //output.color0 = input.color0;
