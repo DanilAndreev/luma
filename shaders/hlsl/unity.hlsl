@@ -28,6 +28,20 @@ float3 PointLight(VSOut input, HLSL::PointLight light, float3 viewDir, float3 ob
     return diffuse * attenuation + ambient * attenuation + specular * attenuation;
 }
 
+float3 DirectionalLight(VSOut input, HLSL::DirectionalLight light, float3 viewDir, float3 objectColor) {
+    float3 normal = normalize(input.normal.xyz);
+    float3 lightDir = normalize(-light.direction);
+    float diffuseStrength = max(dot(normal, lightDir), 0.0);
+
+    float3 halfwayDir = normalize(lightDir + viewDir);
+    float specularStrength = pow(max(dot(normal, halfwayDir), 0.0), CBMeshParams.material.shininess);
+
+    float3 ambient  = light.ambientColor * objectColor;
+    float3 diffuse  = light.diffuseColor * diffuseStrength * objectColor;
+    float3 specular = light.specularColor * specularStrength * objectColor;
+    return (diffuse + ambient + specular) * light.intensity;
+}
+
 PSOut PSMain(VSOut input) {
     float3 viewDir = normalize(CBCameraParams.worldPos - input.worldPos);
 
@@ -38,5 +52,6 @@ PSOut PSMain(VSOut input) {
     for (uint i = 0; i < CBLightParams.pointLightCount; ++i) {
         output.color += float4(PointLight(input, SRVPointLight[i], viewDir, objectColor.xyz), 0.0f);
     }
+    output.color += float4(DirectionalLight(input, CBLightParams.dirLight, viewDir, objectColor.xyz), 0.0f);
     return output;
 }

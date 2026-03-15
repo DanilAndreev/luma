@@ -192,6 +192,7 @@ void SceneRenderer::UploadLightParams(const Scene *scene) noexcept {
     params.dirLight.diffuseColor = scene->directionalLight.diffuseColor;
     params.dirLight.specularColor = scene->directionalLight.specularColor;
     params.dirLight.direction = scene->directionalLight.direction;
+    params.dirLight.intensity = scene->directionalLight.intensity;
     m_Ctx->UpdateSubresource(m_LightParamsCB, 0, nullptr, &params, sizeof(params), 0);
 }
 

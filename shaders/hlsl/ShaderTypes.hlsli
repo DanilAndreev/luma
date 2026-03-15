@@ -31,7 +31,7 @@ namespace HLSL {
         float3 specularColor;
         float padding3;
         float3 direction;
-        float padding4;
+        float intensity;
 
     };
 
