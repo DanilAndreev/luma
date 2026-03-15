@@ -4,7 +4,6 @@
 
 cbuffer CB_CameraParams : register(b0) { HLSL::CameraParams CBCameraParams; }
 cbuffer CB_MeshParams : register(b1) { HLSL::MeshParams CBMeshParams; }
-cbuffer CB_LightParams : register(b2) { HLSL::LightParams CBLightParams; }
 
 VSOut VSMain(VSIn input) {
     VSOut output;

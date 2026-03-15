@@ -250,7 +250,7 @@ void SceneRenderer::RenderMesh(const Scene* scene, const Mesh& mesh, bool depthO
     m_Ctx->IASetInputLayout(mesh.inputLayout);
     m_Ctx->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-    ID3D11Buffer* VSCBs[] = {m_CameraParamsCB, m_MeshParamsCB, m_LightParamsCB};
+    ID3D11Buffer* VSCBs[] = {m_CameraParamsCB, m_MeshParamsCB};
     m_Ctx->VSSetConstantBuffers(0, std::size(VSCBs), VSCBs);
 
     if (!depthOnly) {
