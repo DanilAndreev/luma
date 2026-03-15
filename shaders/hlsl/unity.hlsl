@@ -33,7 +33,7 @@ float3 PointLight(VSOut input, HLSL::PointLight light, float3 viewDir, float3 ob
     return diffuse * attenuation + ambient * attenuation + specular * attenuation;
 }
 
-float4 ShadowCalculation(float4 posLightSpace)
+float ShadowCalculation(float4 posLightSpace)
 {
     float3 projCoords = posLightSpace.xyz / posLightSpace.w;
     projCoords.x = projCoords.x * 0.5f + 0.5f;
@@ -59,10 +59,8 @@ float3 DirectionalLight(VSOut input, HLSL::DirectionalLight light, float3 viewDi
     float3 specular = light.specularColor * specularStrength * objectColor;
 
 
-    // float4 lightSpacePos = mul(float4(input.worldPos, 1.0f), mul(light.worldToLight, light.lightToProj) );
-    float4 lightSpacePos = input.lightPos;
-    float shadow = ShadowCalculation(lightSpacePos).r;
-
+    float4 lightSpacePos = mul(float4(input.worldPos, 1.0f), mul(light.worldToLight, light.lightToProj) );
+    float shadow = ShadowCalculation(lightSpacePos);
     return (ambient + (1.0f - shadow) * (diffuse + specular)) * light.intensity;
 }
 
@@ -78,6 +76,6 @@ PSOut PSMain(VSOut input) {
     }
     output.color += float4(DirectionalLight(input, CBLightParams.dirLight, viewDir, objectColor.xyz), 0.0f);
 
-    output.debugColor = ShadowCalculation(input.lightPos);
+    output.debugColor = 0.0f;
     return output;
 }

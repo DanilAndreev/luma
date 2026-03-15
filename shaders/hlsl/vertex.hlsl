@@ -16,12 +16,5 @@ VSOut VSMain(VSIn input) {
     //output.texcoor0 = input.texcoor0;
     //output.color0 = input.color0;
     output.worldPos = mul(input.position, CBMeshParams.transform).xyz;
-
-
-
-    // output.lightPos = mul(input.position, CBLightParams.dirLight.worldToLightProj);
-    output.lightPos = mul(input.position, CBMeshParams.transform);
-    output.lightPos = mul(output.lightPos, CBLightParams.dirLight.worldToLight);
-    output.lightPos = mul(output.lightPos, CBLightParams.dirLight.lightToProj);
     return output;
 }
