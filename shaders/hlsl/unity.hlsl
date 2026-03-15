@@ -10,7 +10,7 @@ struct PSOut
     float4 color : SV_Target;
 };
 
-float4 PointLight(VSOut input, HLSL::PointLight light, float3 viewDir, float4 objectColor) {
+float3 PointLight(VSOut input, HLSL::PointLight light, float3 viewDir, float3 objectColor) {
     float3 normal = normalize(input.normal.xyz);
     float3 lightDir = normalize(light.position.xyz - input.worldPos);
     float diffuseStrength = max(dot(normal, lightDir), 0.0);
@@ -20,9 +20,9 @@ float4 PointLight(VSOut input, HLSL::PointLight light, float3 viewDir, float4 ob
     float lightDistance = length(light.position.xyz - input.worldPos);
     float attenuation = 1.0 / (light.constantAttenuation + light.linearAttenuation * lightDistance + light.quadraticAttenuation * (lightDistance * lightDistance));
 
-    float4 ambient  = light.ambientColor * objectColor;
-    float4 diffuse  = light.diffuseColor * diffuseStrength * objectColor;
-    float4 specular = light.specularColor * specularStrength * objectColor;
+    float3 ambient  = light.ambientColor * objectColor;
+    float3 diffuse  = light.diffuseColor * diffuseStrength * objectColor;
+    float3 specular = light.specularColor * specularStrength * objectColor;
     return diffuse * attenuation + ambient * attenuation + specular * attenuation;
 }
 
@@ -34,7 +34,7 @@ PSOut PSMain(VSOut input) {
     PSOut output;
     output.color = 0.0f;
     for (uint i = 0; i < CBMaterialParams.pointLightCount; ++i) {
-        output.color = PointLight(input, SRVPointLight[i], viewDir, objectColor);
+        output.color += float4(PointLight(input, SRVPointLight[i], viewDir, objectColor.xyz), 0.0f);
     }
     return output;
 }

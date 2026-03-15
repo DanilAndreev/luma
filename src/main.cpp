@@ -163,9 +163,19 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR pCmdLine, int nCmdShow)
     //Loader::LoadAssetsToScene(scn, "assets/stanford-bunny.obj");
 //    Loader::LoadAssetsToScene(scn, "assets/cube.obj");
 
-    scn.pointLights.emplace_back(PointLight{{1.0f, 1.0f, 1.0f, 1.0f}, {1.0f, 0.0f, 1.0f, 1.0f}, 1.0f});
-    scn.pointLights.emplace_back(PointLight{{1.0f, 0.0f, 1.0f, 1.0f}, {1.0f, 3.0f, 0.0f, 1.0f}, 1.0f});
-    scn.pointLights.emplace_back(PointLight{{0.0f, 1.0f, 1.0f, 1.0f}, {3.0f, 3.0f, 0.0f, 1.0f}, 1.0f});
+    {
+        PointLight light{};
+        light.position = {1.0f, 0.0f, 1.0f, 1.0f};
+        scn.pointLights.push_back(light);
+
+        light.position = {1.0f, 3.0f, 0.0f, 1.0f};
+        scn.pointLights.push_back(light);
+
+        light.position = {3.0f, 3.0f, 0.0f, 1.0f};
+        light.diffuseColor = {0.5, 0.3, 0.8};
+        light.specularColor = {0.8, 0.5, 1.0f};
+        scn.pointLights.push_back(light);
+    }
 
     Loader::UploadSceneBuffersToGPU(scn, device);
 

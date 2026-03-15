@@ -186,12 +186,12 @@ void SceneRenderer::UploadPointLights(const Scene *scene) noexcept {
     lights.resize(scene->pointLights.size());
     for (size_t i = 0; i < scene->pointLights.size(); ++i) {
         lights[i].position = scene->pointLights[i].position;
-        lights[i].ambientColor = {0.01f, 0.01f, 0.01f, 1.0f};
-        lights[i].diffuseColor = scene->pointLights[i].color;
-        lights[i].specularColor = {0.7f, 1.00f, 0.8f, 1.0f};
-        lights[i].constantAttenuation = 1.0f;
-        lights[i].linearAttenuation = 0.14f;
-        lights[i].quadraticAttenuation = 0.07f;
+        lights[i].ambientColor = scene->pointLights[i].ambientColor;
+        lights[i].diffuseColor = scene->pointLights[i].diffuseColor;
+        lights[i].specularColor = scene->pointLights[i].specularColor;
+        lights[i].constantAttenuation = scene->pointLights[i].constantAttenuation;
+        lights[i].linearAttenuation = scene->pointLights[i].linearAttenuation;
+        lights[i].quadraticAttenuation = scene->pointLights[i].quadraticAttenuation;
     }
     m_Ctx->UpdateSubresource(m_PointLights, 0, nullptr, lights.data(), lights.size() * sizeof(lights[0]), 0);
 }

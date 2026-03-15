@@ -5,7 +5,7 @@ StructuredBuffer<HLSL::PointLight> SRVPointLight : register(t0);
 
 struct VSOut {
     float4 position: SV_Position;
-    float4 color: COLOR;
+    float3 color: COLOR;
 };
 
 struct PSOut {
@@ -62,6 +62,6 @@ VSOut VSMain(uint vtID: SV_VertexID, uint iID: SV_InstanceID) {
 
 PSOut PSMain(VSOut input) {
     PSOut output;
-    output.color = input.color;
+    output.color = float4(input.color, 1.0f);
     return output;
 }

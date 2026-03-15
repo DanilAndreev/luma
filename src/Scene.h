@@ -129,9 +129,14 @@ struct MeshInstance {
 };
 
 struct PointLight {
-    DirectX::XMFLOAT4 color;
-    DirectX::XMFLOAT4 position;
-    float attenuation;
+    DirectX::XMFLOAT3 ambientColor = {0.1f, 0.1f, 0.1f};
+    DirectX::XMFLOAT3 diffuseColor = {1.0f, 1.0f, 1.0f};
+    DirectX::XMFLOAT3 specularColor = {1.0f, 1.0f, 1.0f};
+    DirectX::XMFLOAT4 position = {0.0f, 0.0f, 0.0f, 1.0f};
+
+    float constantAttenuation = 1.0f;
+    float linearAttenuation = 0.14f;
+    float quadraticAttenuation = 0.07f;
 };
 
 struct Scene {

@@ -20,15 +20,13 @@ namespace HLSL {
     };
 
     struct PointLight {
-        float4 ambientColor;
-        float4 diffuseColor;
-        float4 specularColor;
-        float4 position;
-
+        float3 ambientColor;
         float constantAttenuation;
+        float3 diffuseColor;
         float linearAttenuation;
+        float3 specularColor;
         float quadraticAttenuation;
-        float padding;
+        float4 position;
     };
 
 } /* namespace HLSL*/
