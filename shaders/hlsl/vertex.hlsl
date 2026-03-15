@@ -8,8 +8,8 @@ cbuffer CB_MeshParams : register(b1) { HLSL::MeshParams CBMeshParams; }
 VSOut VSMain(VSIn input) {
     VSOut output;
 
-    float4x4 viewProj = mul(mul(CBMeshParams.transform, CBCameraParams.worldToCamera), CBCameraParams.cameraToProjection);
-    output.position = mul(input.position, viewProj);
+    float4x4 MVP = mul(CBMeshParams.transform, CBCameraParams.worldToCameraProj);
+    output.position = mul(input.position, MVP);
     //TODO: calculate normal matrix and transform normals.
     output.normal = input.normal;
     //output.texcoor0 = input.texcoor0;

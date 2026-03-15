@@ -186,15 +186,14 @@ void SceneRenderer::DirLightShadowPass(Scene* scene) noexcept {
         HLSL::CameraParams params{};
         XMStoreFloat4x4(&params.worldToCamera, XMMatrixTranspose(worldToLight));
         XMStoreFloat4x4(&params.cameraToProjection, XMMatrixTranspose(lightToProjection));
+        XMStoreFloat4x4(&params.worldToCameraProj, XMMatrixTranspose(worldToLightProj));
         m_Ctx->UpdateSubresource(m_CameraParamsCB, 0, nullptr, &params, sizeof(params), 0);
 
         //TODO: remove to scene update pass
-        XMStoreFloat4x4(&scene->directionalLight.worldToLightProj, XMMatrixTranspose(worldToLightProj));
         scene->directionalLight.worldToLight = params.worldToCamera;
         scene->directionalLight.lightToProj = params.cameraToProjection;
+        scene->directionalLight.worldToLightProj = params.worldToCameraProj;
     }
-    UploadLightParams(scene); // TODO: remove
-
 
     m_Ctx->OMSetRenderTargets(0, nullptr, m_DirLightShadowMapTexDSV);
     m_Ctx->ClearDepthStencilView(m_DirLightShadowMapTexDSV, D3D11_CLEAR_DEPTH, 1.0f, 0);
@@ -282,12 +281,19 @@ void SceneRenderer::VisualizePointLight(const Scene *scene, size_t lightID) noex
 
 void SceneRenderer::UploadCameraParams() noexcept {
     using namespace DirectX;
-    HLSL::CameraParams params{};
-    XMFLOAT4X4 worldToCamera = g_Cam.ViewTransform();
     float aspectRatio = static_cast<float>(m_TargetW) / static_cast<float>(m_TargetH);
+    XMFLOAT4X4 worldToCamera = g_Cam.ViewTransform();
     XMFLOAT4X4 cameraToProjection = g_Cam.CameraToProjection(aspectRatio);
-    XMStoreFloat4x4(&params.worldToCamera, XMMatrixTranspose(XMLoadFloat4x4(&worldToCamera)));
-    XMStoreFloat4x4(&params.cameraToProjection, XMMatrixTranspose(XMLoadFloat4x4(&cameraToProjection)));
+
+    XMMATRIX worldToCameraSIMD = XMLoadFloat4x4(&worldToCamera);
+    XMMATRIX cameraToProjectionSIMD = XMLoadFloat4x4(&cameraToProjection);
+    XMMATRIX worldToCameraProjSIMD = XMMatrixMultiply(worldToCameraSIMD, cameraToProjectionSIMD);
+
+    HLSL::CameraParams params{};
+    XMStoreFloat4x4(&params.worldToCamera, XMMatrixTranspose(worldToCameraSIMD));
+    XMStoreFloat4x4(&params.cameraToProjection, XMMatrixTranspose(cameraToProjectionSIMD));
+    XMStoreFloat4x4(&params.worldToCameraProj, XMMatrixTranspose(worldToCameraProjSIMD));
+
     params.worldPos = g_Cam.GetPosition();
     m_Ctx->UpdateSubresource(m_CameraParamsCB, 0, nullptr, &params, sizeof(params), 0);
 }
