@@ -58,8 +58,7 @@ float3 DirectionalLight(VSOut input, HLSL::DirectionalLight light, float3 viewDi
     float3 diffuse  = light.diffuseColor * diffuseStrength * objectColor;
     float3 specular = light.specularColor * specularStrength * objectColor;
 
-
-    float4 lightSpacePos = mul(float4(input.worldPos, 1.0f), mul(light.worldToLight, light.lightToProj) );
+    float4 lightSpacePos = mul(float4(input.worldPos, 1.0f), light.worldToLightProj);
     float shadow = ShadowCalculation(lightSpacePos);
     return (ambient + (1.0f - shadow) * (diffuse + specular)) * light.intensity;
 }

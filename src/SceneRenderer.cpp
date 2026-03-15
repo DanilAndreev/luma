@@ -181,7 +181,7 @@ void SceneRenderer::DirLightShadowPass(Scene* scene) noexcept {
 
         XMMATRIX worldToLight = XMMatrixLookToLH(pos, front, up);
         XMMATRIX lightToProjection = XMMatrixOrthographicLH(10, 10,0.001f, 10.0f);
-        XMMATRIX worldToLightProj = XMMatrixMultiply(lightToProjection, worldToLight);
+        XMMATRIX worldToLightProj = XMMatrixMultiply(worldToLight, lightToProjection);
 
         HLSL::CameraParams params{};
         XMStoreFloat4x4(&params.worldToCamera, XMMatrixTranspose(worldToLight));
