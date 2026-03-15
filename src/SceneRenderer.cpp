@@ -65,8 +65,8 @@ void SceneRenderer::Initialize(ID3D11Device *device, ID3D11DeviceContext *contex
         desc.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
         desc.CPUAccessFlags = 0;
         desc.MiscFlags = 0;
-        desc.Width = SHADOW_MAP_DIM;
-        desc.Height = SHADOW_MAP_DIM;
+        desc.Width = LUMA_SHADOW_MAP_DIM;
+        desc.Height = LUMA_SHADOW_MAP_DIM;
         desc.Usage = D3D11_USAGE_DEFAULT;
         desc.ArraySize = 1;
         desc.MipLevels = 1;
@@ -199,8 +199,8 @@ void SceneRenderer::DirLightShadowPass(Scene* scene) noexcept {
     m_Ctx->ClearDepthStencilView(m_DirLightShadowMapTexDSV, D3D11_CLEAR_DEPTH, 1.0f, 0);
 
     D3D11_VIEWPORT viewport{};
-    viewport.Width = SHADOW_MAP_DIM;
-    viewport.Height = SHADOW_MAP_DIM;
+    viewport.Width = LUMA_SHADOW_MAP_DIM;
+    viewport.Height = LUMA_SHADOW_MAP_DIM;
     viewport.MinDepth = 0.0f;
     viewport.MaxDepth = 1.0f;
     viewport.TopLeftX = 0;

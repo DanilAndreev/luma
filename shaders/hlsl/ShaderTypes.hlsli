@@ -3,6 +3,8 @@
 
 #include "HLSLCPPCompat.hlsli"
 
+#define LUMA_SHADOW_MAP_DIM 8192;
+
 namespace HLSL {
 
     struct CameraParams {

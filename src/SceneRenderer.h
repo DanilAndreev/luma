@@ -20,8 +20,6 @@ protected:
     void UploadPointLights(const Scene* scene) noexcept;
 
 protected:
-    static constexpr size_t SHADOW_MAP_DIM = 8192;
-
     ID3D11Device* m_Device = nullptr;
     ID3D11DeviceContext* m_Ctx = nullptr;
 

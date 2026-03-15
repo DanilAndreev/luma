@@ -33,6 +33,12 @@ float3 PointLight(VSOut input, HLSL::PointLight light, float3 viewDir, float3 ob
     return diffuse * attenuation + ambient * attenuation + specular * attenuation;
 }
 
+// float LinearizeDepth(float depth)
+// {
+//     float z = depth * 2.0 - 1.0; // Back to NDC
+//     return (2.0 * near_plane * far_plane) / (far_plane + near_plane - z * (far_plane - near_plane));
+// }
+
 float ShadowCalculation(float4 posLightSpace)
 {
     float3 projCoords = posLightSpace.xyz / posLightSpace.w;
@@ -43,7 +49,7 @@ float ShadowCalculation(float4 posLightSpace)
     const float bias = 0.005;
 
     float shadow = 0.0;
-    float2 texelSize = 1.0 / 8192.0f;
+    float2 texelSize = 1.0 / LUMA_SHADOW_MAP_DIM;
 
     [unroll]
     for(int x = -1; x <= 1; ++x)
