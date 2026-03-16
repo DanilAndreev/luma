@@ -8,7 +8,7 @@ cbuffer CB_LightParams : register(b2) { HLSL::LightParams CBLightParams; }
 StructuredBuffer<HLSL::PointLight> SRVPointLight : register(t0);
 
 Texture2D<float> DirLightShadowMap : register(t1);
-TextureCube<float> PointLightShadowMap : register(t2);
+TextureCubeArray<float> PointLightShadowMap : register(t2);
 
 SamplerState ShadowMapSMP : register(s0);
 
@@ -18,16 +18,16 @@ struct PSOut
     float4 debugColor : SV_Target1;
 };
 
-float PointLightShadowCalculation(HLSL::PointLight light, float3 worldPos) {
+float PointLightShadowCalculation(HLSL::PointLight light, uint lightIdx, float3 worldPos) {
     float3 fragToLight = worldPos - light.position;
-    float closestDepth = PointLightShadowMap.Sample(ShadowMapSMP, fragToLight);
+    float closestDepth = PointLightShadowMap.Sample(ShadowMapSMP, float4(fragToLight, lightIdx));
     float closestDepthLinear = closestDepth * light.shadowMapProjFarPlane;
     float currentDepth = length(fragToLight);
     float bias = 0.05;
     return currentDepth - bias > closestDepthLinear ? 1.0 : 0.0;
 }
 
-float3 PointLight(VSOut input, HLSL::PointLight light, float3 viewDir, float3 objectColor) {
+float3 PointLight(VSOut input, HLSL::PointLight light, uint lightIdx, float3 viewDir, float3 objectColor) {
     float3 normal = normalize(input.normal.xyz);
     float3 lightDir = normalize(light.position.xyz - input.worldPos);
     float diffuseStrength = max(dot(normal, lightDir), 0.0);
@@ -41,7 +41,7 @@ float3 PointLight(VSOut input, HLSL::PointLight light, float3 viewDir, float3 ob
     float3 diffuse  = light.diffuseColor * diffuseStrength * objectColor;
     float3 specular = light.specularColor * specularStrength * objectColor;
 
-    float shadow = PointLightShadowCalculation(light, input.worldPos);
+    float shadow = PointLightShadowCalculation(light, lightIdx, input.worldPos);
     return ambient * attenuation + (1 - shadow) * (diffuse * attenuation + specular * attenuation);
 }
 
@@ -102,9 +102,9 @@ PSOut PSMain(VSOut input) {
     PSOut output;
     output.color = 0.0f;
     for (uint i = 0; i < CBLightParams.pointLightCount; ++i) {
-        output.color += float4(PointLight(input, SRVPointLight[i], viewDir, objectColor.xyz), 0.0f);
+        output.color += float4(PointLight(input, SRVPointLight[i], i, viewDir, objectColor.xyz), 0.0f);
     }
-    output.color += float4(DirectionalLight(input, CBLightParams.dirLight, viewDir, objectColor.xyz), 0.0f);
+    // output.color += float4(DirectionalLight(input, CBLightParams.dirLight, viewDir, objectColor.xyz), 0.0f);
 
     output.debugColor = 0.0f;
     return output;

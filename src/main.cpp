@@ -185,10 +185,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR pCmdLine, int nCmdShow)
         light.constantAttenuation = 10.0;
         scn.pointLights.push_back(light);
 
-        // light.position = {1.0f, 3.0f, 0.0f, 1.0f};
-        // scn.pointLights.push_back(light);
-        //
-        // light.position = {3.0f, 3.0f, 0.0f, 1.0f};
+        light.position = {-1.0f, 1.0f, 0.5f};
+        scn.pointLights.push_back(light);
+
+        // light.position = {0.0f, 1.5f, 1.0f};
         // light.diffuseColor = {0.5, 0.3, 0.8};
         // light.specularColor = {0.8, 0.5, 1.0f};
         // scn.pointLights.push_back(light);
@@ -199,10 +199,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR pCmdLine, int nCmdShow)
     SceneRenderer renderer{};
     renderer.Initialize(device, context);
     renderer.SetTarget(framebufferRTV, 800, 600);
-
+    renderer.InitShadowmapResources(scn.pointLights.size());
 
     // Main Loop
     bool isRunning = true;
+    size_t frame = 0;
     while(isRunning)
     {
         MSG msg = {};
@@ -219,6 +220,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR pCmdLine, int nCmdShow)
         renderer.RenderFrame(&scn);
         swapchain->Present(1, 0);
         g_InputManager.Tick();
+
+        scn.pointLights[0].position.x = sin(static_cast<float>(frame) / 1000.0f);
+
+
+        ++frame;
     }
 
     device->Release();

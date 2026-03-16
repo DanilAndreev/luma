@@ -153,10 +153,6 @@ struct PointLight {
     float shadowMapProjNearPlane = 1.0f;
     float shadowMapProjFarPlane = 25.0f;
 
-    ID3D11Texture2D* m_ShadowCubemap;
-    ID3D11DepthStencilView* m_ShadowCubemapDSV[6];
-    ID3D11ShaderResourceView* m_ShadowCubemapSRV;
-
     DirectX::XMMATRIX shadowmapProj;
     DirectX::XMMATRIX shadowmapProjInv;
 };

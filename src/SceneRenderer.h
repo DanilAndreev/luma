@@ -6,6 +6,7 @@ class SceneRenderer {
 public:
     void Initialize(ID3D11Device* device, ID3D11DeviceContext* context) noexcept;
     void SetTarget(ID3D11RenderTargetView* RTV, uint32_t w, uint32_t h) noexcept;
+    void InitShadowmapResources(size_t maxDirectionalPointLight) noexcept;
     void RenderFrame(Scene* scene) noexcept;
 
 protected:
@@ -46,5 +47,10 @@ protected:
     ID3D11DepthStencilView* m_DirLightShadowMapTexDSV = nullptr;
     ID3D11ShaderResourceView* m_DirLightShadowMapTexSRV = nullptr;
     ID3D11SamplerState* m_ShadowMapSMP = nullptr;
+
+    size_t m_MaxDirectionalPointLight = 0;
     ID3D11Buffer* m_CurShadowPointLightCB = nullptr;
+    ID3D11Texture2D* m_PointLightShadowCubemapTexarr = nullptr;
+    std::vector<ID3D11DepthStencilView*> m_PointLightShadowCubemapTexarrDSVs{};
+    ID3D11ShaderResourceView* m_PointLightShadowCubemapTexarrSRV{};
 };
