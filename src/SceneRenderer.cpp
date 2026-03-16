@@ -29,6 +29,9 @@ void SceneRenderer::Initialize(ID3D11Device *device, ID3D11DeviceContext *contex
 
         desc.ByteWidth = sizeof(HLSL::LightParams);
         device->CreateBuffer(&desc, nullptr, &m_LightParamsCB);
+
+        desc.ByteWidth = sizeof(HLSL::PointLight);
+        device->CreateBuffer(&desc, nullptr, &m_CurShadowPointLightCB);
     }
 
     {
@@ -50,6 +53,7 @@ void SceneRenderer::Initialize(ID3D11Device *device, ID3D11DeviceContext *contex
 
     {
         D3D11_SAMPLER_DESC desc{};
+        desc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
         desc.AddressU = D3D11_TEXTURE_ADDRESS_BORDER;
         desc.AddressV = D3D11_TEXTURE_ADDRESS_BORDER;
         desc.AddressW = D3D11_TEXTURE_ADDRESS_BORDER;
@@ -65,8 +69,8 @@ void SceneRenderer::Initialize(ID3D11Device *device, ID3D11DeviceContext *contex
         desc.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
         desc.CPUAccessFlags = 0;
         desc.MiscFlags = 0;
-        desc.Width = LUMA_SHADOW_MAP_DIM;
-        desc.Height = LUMA_SHADOW_MAP_DIM;
+        desc.Width = LUMA_DIR_SHADOW_MAP_DIM;
+        desc.Height = LUMA_DIR_SHADOW_MAP_DIM;
         desc.Usage = D3D11_USAGE_DEFAULT;
         desc.ArraySize = 1;
         desc.MipLevels = 1;
@@ -143,9 +147,12 @@ void SceneRenderer::SetTarget(ID3D11RenderTargetView *RTV, uint32_t w, uint32_t 
 
 void SceneRenderer::RenderFrame(Scene *scene) noexcept {
     DirLightShadowPass(scene);
+    UploadPointLights(scene);
+    PointLightShadowPass(scene);
 
     UploadPointLights(scene);
     UploadLightParams(scene);
+
 
     UploadCameraParams();
 
@@ -199,16 +206,78 @@ void SceneRenderer::DirLightShadowPass(Scene* scene) noexcept {
     m_Ctx->ClearDepthStencilView(m_DirLightShadowMapTexDSV, D3D11_CLEAR_DEPTH, 1.0f, 0);
 
     D3D11_VIEWPORT viewport{};
-    viewport.Width = LUMA_SHADOW_MAP_DIM;
-    viewport.Height = LUMA_SHADOW_MAP_DIM;
+    viewport.Width = LUMA_DIR_SHADOW_MAP_DIM;
+    viewport.Height = LUMA_DIR_SHADOW_MAP_DIM;
     viewport.MinDepth = 0.0f;
     viewport.MaxDepth = 1.0f;
-    viewport.TopLeftX = 0;
-    viewport.TopLeftY = 0;
     m_Ctx->RSSetViewports(1, &viewport);
 
     for (size_t i = 0; i < scene->meshes.size(); ++i) {
+        m_Ctx->PSSetShader(nullptr, nullptr, 0);
         RenderMesh(scene, scene->meshes[i], true);
+    }
+}
+
+void SceneRenderer::PointLightShadowPass(Scene *scene) noexcept {
+    static const DirectX::XMVECTOR s_DirFront = DirectX::XMVectorSet(0, 0, -1, 1);
+    static const DirectX::XMVECTOR s_DirBack = DirectX::XMVectorSet(0, 0, 1, 1);
+    static const DirectX::XMVECTOR s_DirLeft = DirectX::XMVectorSet(-1, 0, 0, 1);
+    static const DirectX::XMVECTOR s_DirRight = DirectX::XMVectorSet(1, 0, 0, 1);
+    static const DirectX::XMVECTOR s_DirUp = DirectX::XMVectorSet(0, 1, 0, 1);
+    static const DirectX::XMVECTOR s_DirDown = DirectX::XMVectorSet(0, -1, 0, 1);
+
+    for (size_t lightIdx = 0; lightIdx < scene->pointLights.size(); ++lightIdx) {
+        const auto light = scene->pointLights[lightIdx];
+
+        D3D11_VIEWPORT viewport{};
+        viewport.Width = LUMA_OMNIDIR_SHADOW_MAP_DIM;
+        viewport.Height = LUMA_OMNIDIR_SHADOW_MAP_DIM;
+        viewport.MinDepth = 0.0f;
+        viewport.MaxDepth = 1.0f;
+        m_Ctx->RSSetViewports(1, &viewport);
+
+        for (size_t i = 0; i < std::size(light.m_ShadowCubemapDSV); ++i) {
+            m_Ctx->ClearDepthStencilView(light.m_ShadowCubemapDSV[i], D3D11_CLEAR_DEPTH, 1.0f, 0);
+        }
+
+        using namespace DirectX;
+        XMVECTOR pos = XMLoadFloat3(&light.position);
+
+        XMMATRIX worldToLight[6] = {
+            XMMatrixLookToLH(pos, s_DirRight, s_DirUp),
+            XMMatrixLookToLH(pos, s_DirLeft, s_DirUp),
+            XMMatrixLookToLH(pos, s_DirUp, s_DirFront),
+            XMMatrixLookToLH(pos, s_DirDown, s_DirBack),
+            XMMatrixLookToLH(pos, s_DirBack, s_DirUp),
+            XMMatrixLookToLH(pos, s_DirFront, s_DirUp),
+        };
+        assert(std::size(worldToLight) == std::size(light.m_ShadowCubemapDSV));
+
+        for (const auto& mesh : scene->meshes) {
+            HLSL::CameraParams params{};
+
+
+            for (size_t i = 0; i < std::size(worldToLight); ++i) {
+                XMMATRIX worldToLightProj = XMMatrixMultiply(worldToLight[i], light.shadowmapProj);
+                XMStoreFloat4x4(&params.worldToCamera, XMMatrixTranspose(worldToLight[i]));
+                XMStoreFloat4x4(&params.cameraToProjection, XMMatrixTranspose(light.shadowmapProj));
+                XMStoreFloat4x4(&params.worldToCameraProj, XMMatrixTranspose(worldToLightProj));
+                m_Ctx->UpdateSubresource(m_CameraParamsCB, 0, nullptr, &params, sizeof(params), 0);
+
+                m_Ctx->OMSetRenderTargets(0, nullptr, light.m_ShadowCubemapDSV[i]);
+
+                m_Ctx->PSSetShader(g_SM.Get(PixelShaderID::CubemapShadowDepth), nullptr, 0);
+                m_Ctx->PSSetConstantBuffers(0, 1, &m_CurShadowPointLightCB);
+
+                D3D11_BOX box{};
+                box.left = lightIdx * sizeof(HLSL::PointLight);
+                box.right = box.left + sizeof(HLSL::PointLight);
+                box.bottom = 1;
+                box.back = 1;
+                m_Ctx->CopySubresourceRegion(m_CurShadowPointLightCB, 0, 0, 0, 0, m_PointLights, 0, &box);
+                RenderMesh(scene, mesh, true);
+            }
+        }
     }
 }
 
@@ -222,9 +291,7 @@ void SceneRenderer::RenderMesh(const Scene* scene, const Mesh& mesh, bool depthO
     UploadMeshParams(scene, mesh);
 
     m_Ctx->VSSetShader(g_SM.Get(VertexShaderID::Unity), nullptr, 0);
-    if (depthOnly) {
-        m_Ctx->PSSetShader(nullptr, nullptr, 0);
-    } else {
+    if (!depthOnly) {
         m_Ctx->PSSetShader(g_SM.Get(PixelShaderID::Unity), nullptr, 0);
     }
 
@@ -255,7 +322,7 @@ void SceneRenderer::RenderMesh(const Scene* scene, const Mesh& mesh, bool depthO
     if (!depthOnly) {
         ID3D11Buffer* PSCBs[] = {m_CameraParamsCB, m_MeshParamsCB, m_LightParamsCB};
         m_Ctx->PSSetConstantBuffers(0, std::size(PSCBs), PSCBs);
-        ID3D11ShaderResourceView* PSSRVs[] = {m_PointLightsSRV, m_DirLightShadowMapTexSRV};
+        ID3D11ShaderResourceView* PSSRVs[] = {m_PointLightsSRV, m_DirLightShadowMapTexSRV, scene->pointLights[0].m_ShadowCubemapSRV};
         m_Ctx->PSSetShaderResources(0, std::size(PSSRVs), PSSRVs);
         m_Ctx->PSSetSamplers(0, 1, &m_ShadowMapSMP);
     }
@@ -296,6 +363,15 @@ void SceneRenderer::UploadCameraParams() noexcept {
 
     params.worldPos = g_Cam.GetPosition();
     m_Ctx->UpdateSubresource(m_CameraParamsCB, 0, nullptr, &params, sizeof(params), 0);
+
+
+    // auto a = XMMatrixInverse(nullptr, projection);
+    // auto vec = XMVectorSet(0.5, 0.5, 10, 1);
+    //
+    // auto res = XMVector4Transform(vec, projection);
+    // auto resInv = XMVector4Transform(res, a);
+    // auto m = XMMatrixMultiply(projection, a);
+    // auto s = 0;
 }
 
 void SceneRenderer::UploadMeshParams(const Scene* scene, const Mesh& mesh) noexcept {
@@ -329,6 +405,7 @@ void SceneRenderer::UploadPointLights(const Scene *scene) noexcept {
     std::vector<HLSL::PointLight> lights{};
     lights.resize(scene->pointLights.size());
     for (size_t i = 0; i < scene->pointLights.size(); ++i) {
+        using namespace DirectX;
         lights[i].position = scene->pointLights[i].position;
         lights[i].ambientColor = scene->pointLights[i].ambientColor;
         lights[i].diffuseColor = scene->pointLights[i].diffuseColor;
@@ -336,6 +413,10 @@ void SceneRenderer::UploadPointLights(const Scene *scene) noexcept {
         lights[i].constantAttenuation = scene->pointLights[i].constantAttenuation;
         lights[i].linearAttenuation = scene->pointLights[i].linearAttenuation;
         lights[i].quadraticAttenuation = scene->pointLights[i].quadraticAttenuation;
+        XMStoreFloat4x4(&lights[i].shadowMapProjInv, XMMatrixTranspose(scene->pointLights[i].shadowmapProjInv));
+        lights[i].shadowMapProjNearPlane = scene->pointLights[i].shadowMapProjNearPlane;
+        lights[i].shadowMapProjFarPlane = scene->pointLights[i].shadowMapProjFarPlane;
+        lights[i].shadowMapResolutionDim = LUMA_OMNIDIR_SHADOW_MAP_DIM;
     }
     m_Ctx->UpdateSubresource(m_PointLights, 0, nullptr, lights.data(), lights.size() * sizeof(lights[0]), 0);
 }

@@ -12,6 +12,10 @@ void ShaderManager::Initialize(ID3D11Device* device) noexcept {
         device->CreatePixelShader(bytecode.data(), bytecode.size(), NULL, &Get(PixelShaderID::Unity));
     }
     {
+        auto bytecode = LoadFile(compiledShadersDir / "cubemapShadowDepth.ps.dxbc");
+        device->CreatePixelShader(bytecode.data(), bytecode.size(), NULL, &Get(PixelShaderID::CubemapShadowDepth));
+    }
+    {
         const char name[] = "pointLightVisualize.ps";
         auto bytecode = LoadFile(compiledShadersDir / "pointLightVisualize.ps.dxbc");
         device->CreatePixelShader(bytecode.data(), bytecode.size(), NULL, &Get(PixelShaderID::PointLightVisualize));

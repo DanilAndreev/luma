@@ -144,11 +144,21 @@ struct PointLight {
     DirectX::XMFLOAT3 ambientColor = {0.1f, 0.1f, 0.1f};
     DirectX::XMFLOAT3 diffuseColor = {1.0f, 1.0f, 1.0f};
     DirectX::XMFLOAT3 specularColor = {1.0f, 1.0f, 1.0f};
-    DirectX::XMFLOAT4 position = {0.0f, 0.0f, 0.0f, 1.0f};
+    DirectX::XMFLOAT3 position = {0.0f, 0.0f, 0.0f};
 
     float constantAttenuation = 1.0f;
     float linearAttenuation = 0.14f;
     float quadraticAttenuation = 0.07f;
+
+    float shadowMapProjNearPlane = 1.0f;
+    float shadowMapProjFarPlane = 25.0f;
+
+    ID3D11Texture2D* m_ShadowCubemap;
+    ID3D11DepthStencilView* m_ShadowCubemapDSV[6];
+    ID3D11ShaderResourceView* m_ShadowCubemapSRV;
+
+    DirectX::XMMATRIX shadowmapProj;
+    DirectX::XMMATRIX shadowmapProjInv;
 };
 
 struct Scene {

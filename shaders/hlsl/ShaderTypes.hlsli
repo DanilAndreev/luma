@@ -3,7 +3,8 @@
 
 #include "HLSLCPPCompat.hlsli"
 
-#define LUMA_SHADOW_MAP_DIM 8192;
+#define LUMA_DIR_SHADOW_MAP_DIM 4096;
+#define LUMA_OMNIDIR_SHADOW_MAP_DIM 2048;
 
 namespace HLSL {
 
@@ -47,7 +48,13 @@ namespace HLSL {
         float linearAttenuation;
         float3 specularColor;
         float quadraticAttenuation;
-        float4 position;
+        float3 position;
+        uint shadowMapResolutionDim;
+
+        float4x4 shadowMapProjInv;
+        float shadowMapProjFarPlane;
+        float shadowMapProjNearPlane;
+        float2 padding;
     };
 
     struct LightParams {

@@ -10,6 +10,7 @@ public:
 
 protected:
     void DirLightShadowPass(Scene* scene) noexcept;
+    void PointLightShadowPass(Scene* scene) noexcept;
 
     void RenderMesh(const Scene* scene, const Mesh& mesh, bool depthOnly = false) noexcept;
     void VisualizePointLight(const Scene* scene, size_t lightID) noexcept;
@@ -45,4 +46,5 @@ protected:
     ID3D11DepthStencilView* m_DirLightShadowMapTexDSV = nullptr;
     ID3D11ShaderResourceView* m_DirLightShadowMapTexSRV = nullptr;
     ID3D11SamplerState* m_ShadowMapSMP = nullptr;
+    ID3D11Buffer* m_CurShadowPointLightCB = nullptr;
 };

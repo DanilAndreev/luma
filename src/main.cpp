@@ -180,11 +180,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR pCmdLine, int nCmdShow)
     Loader::LoadAssetsToScene(scn, "assets/cube.obj", TransformDeg({0, 0, 0}, {}, {4, 0.01, 4}));
 
     {
-        // PointLight light{};
-        // light.position = {1.0f, 1.0f, 1.0f, 1.0f};
-        // light.constantAttenuation = 10.0;
-        // scn.pointLights.push_back(light);
-        //
+        PointLight light{};
+        light.position = {1.0f, 1.0f, 1.0f};
+        light.constantAttenuation = 10.0;
+        scn.pointLights.push_back(light);
+
         // light.position = {1.0f, 3.0f, 0.0f, 1.0f};
         // scn.pointLights.push_back(light);
         //

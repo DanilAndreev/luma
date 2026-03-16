@@ -5,6 +5,8 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 
+#include <hlsl/ShaderTypes.hlsli>
+
 
 namespace Loader {
 	static Mesh processMesh(aiMesh* mesh, const aiScene* scene, DirectX::XMFLOAT4X4 transform) {
@@ -191,6 +193,57 @@ namespace Loader {
 
 			const auto& shaderSrc = g_SM.GetSrc(VertexShaderID::Unity);
 			device->CreateInputLayout(inputElements, inputSlot, shaderSrc.data(), shaderSrc.size(), &mesh.inputLayout);
+		}
+
+		for (size_t i = 0; i < scene.pointLights.size(); ++i) {
+			auto& light = scene.pointLights[i];
+
+			D3D11_TEXTURE2D_DESC desc{};
+			desc.Format = DXGI_FORMAT_R32_TYPELESS;
+			desc.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
+			desc.CPUAccessFlags = 0;
+			desc.MiscFlags = D3D11_RESOURCE_MISC_TEXTURECUBE;
+			desc.Width = LUMA_OMNIDIR_SHADOW_MAP_DIM;
+			desc.Height = LUMA_OMNIDIR_SHADOW_MAP_DIM;
+			desc.Usage = D3D11_USAGE_DEFAULT;
+			desc.ArraySize = 6;
+			desc.MipLevels = 1;
+			desc.SampleDesc.Count = 1;
+			device->CreateTexture2D(&desc, nullptr, &light.m_ShadowCubemap);
+
+			//TODO: use GS to render it
+
+			// D3D11_DEPTH_STENCIL_VIEW_DESC dsvDesc{};
+			// dsvDesc.Format = DXGI_FORMAT_D32_FLOAT;
+			// dsvDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DARRAY;
+			// dsvDesc.Flags = 0;
+			// dsvDesc.Texture2DArray.MipSlice = 0;
+			// dsvDesc.Texture2DArray.FirstArraySlice = 0;
+			// dsvDesc.Texture2DArray.ArraySize = 1;
+			// device->CreateDepthStencilView(light.m_ShadowCubemap, &dsvDesc, &light.m_ShadowCubemapDSV);
+
+			for (size_t cubemapFaceIdx = 0; cubemapFaceIdx < std::size(light.m_ShadowCubemapDSV); ++cubemapFaceIdx) {
+				D3D11_DEPTH_STENCIL_VIEW_DESC dsvDesc{};
+				dsvDesc.Format = DXGI_FORMAT_D32_FLOAT;
+				dsvDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DARRAY;
+				dsvDesc.Flags = 0;
+				dsvDesc.Texture2DArray.MipSlice = 0;
+				dsvDesc.Texture2DArray.FirstArraySlice = cubemapFaceIdx;
+				dsvDesc.Texture2DArray.ArraySize = 1;
+				device->CreateDepthStencilView(light.m_ShadowCubemap, &dsvDesc, &light.m_ShadowCubemapDSV[cubemapFaceIdx]);
+			}
+
+			D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc{};
+			srvDesc.Format = DXGI_FORMAT_R32_FLOAT;
+			srvDesc.ViewDimension = D3D10_1_SRV_DIMENSION_TEXTURECUBE;
+			srvDesc.TextureCube.MipLevels = 1;
+
+			device->CreateShaderResourceView(light.m_ShadowCubemap, &srvDesc, &light.m_ShadowCubemapSRV);
+
+			using namespace DirectX;
+			using namespace DirectX;
+			light.shadowmapProj = XMMatrixPerspectiveFovLH(XM_PIDIV2, 1, light.shadowMapProjNearPlane, light.shadowMapProjFarPlane);
+			light.shadowmapProjInv = XMMatrixInverse(nullptr, light.shadowmapProj);
 		}
 		return true;
 	}

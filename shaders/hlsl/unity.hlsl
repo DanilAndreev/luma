@@ -8,6 +8,7 @@ cbuffer CB_LightParams : register(b2) { HLSL::LightParams CBLightParams; }
 StructuredBuffer<HLSL::PointLight> SRVPointLight : register(t0);
 
 Texture2D<float> DirLightShadowMap : register(t1);
+TextureCube<float> PointLightShadowMap : register(t2);
 
 SamplerState ShadowMapSMP : register(s0);
 
@@ -16,6 +17,15 @@ struct PSOut
     float4 color : SV_Target0;
     float4 debugColor : SV_Target1;
 };
+
+float PointLightShadowCalculation(HLSL::PointLight light, float3 worldPos) {
+    float3 fragToLight = worldPos - light.position;
+    float closestDepth = PointLightShadowMap.Sample(ShadowMapSMP, fragToLight);
+    float closestDepthLinear = closestDepth * light.shadowMapProjFarPlane;
+    float currentDepth = length(fragToLight);
+    float bias = 0.05;
+    return currentDepth - bias > closestDepthLinear ? 1.0 : 0.0;
+}
 
 float3 PointLight(VSOut input, HLSL::PointLight light, float3 viewDir, float3 objectColor) {
     float3 normal = normalize(input.normal.xyz);
@@ -30,7 +40,9 @@ float3 PointLight(VSOut input, HLSL::PointLight light, float3 viewDir, float3 ob
     float3 ambient  = light.ambientColor * objectColor;
     float3 diffuse  = light.diffuseColor * diffuseStrength * objectColor;
     float3 specular = light.specularColor * specularStrength * objectColor;
-    return diffuse * attenuation + ambient * attenuation + specular * attenuation;
+
+    float shadow = PointLightShadowCalculation(light, input.worldPos);
+    return ambient * attenuation + (1 - shadow) * (diffuse * attenuation + specular * attenuation);
 }
 
 // float LinearizeDepth(float depth)
@@ -39,7 +51,7 @@ float3 PointLight(VSOut input, HLSL::PointLight light, float3 viewDir, float3 ob
 //     return (2.0 * near_plane * far_plane) / (far_plane + near_plane - z * (far_plane - near_plane));
 // }
 
-float ShadowCalculation(float4 posLightSpace)
+float DirlightShadowCalculation(float4 posLightSpace)
 {
     float3 projCoords = posLightSpace.xyz / posLightSpace.w;
     projCoords.x = projCoords.x * 0.5f + 0.5f;
@@ -49,7 +61,7 @@ float ShadowCalculation(float4 posLightSpace)
     const float bias = 0.005;
 
     float shadow = 0.0;
-    float2 texelSize = 1.0 / LUMA_SHADOW_MAP_DIM;
+    float2 texelSize = 1.0 / LUMA_DIR_SHADOW_MAP_DIM;
 
     [unroll]
     for(int x = -1; x <= 1; ++x)
@@ -78,7 +90,7 @@ float3 DirectionalLight(VSOut input, HLSL::DirectionalLight light, float3 viewDi
     float3 specular = light.specularColor * specularStrength * objectColor;
 
     float4 lightSpacePos = mul(float4(input.worldPos, 1.0f), light.worldToLightProj);
-    float shadow = ShadowCalculation(lightSpacePos);
+    float shadow = DirlightShadowCalculation(lightSpacePos);
     return (ambient + (1.0f - shadow) * (diffuse + specular)) * light.intensity;
 }
 

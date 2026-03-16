@@ -2,6 +2,7 @@
 
 enum class PixelShaderID {
     Unity,
+    CubemapShadowDepth,
     PointLightVisualize,
     Count,
 };
