@@ -104,7 +104,7 @@ PSOut PSMain(VSOut input) {
     for (uint i = 0; i < CBLightParams.pointLightCount; ++i) {
         output.color += float4(PointLight(input, SRVPointLight[i], i, viewDir, objectColor.xyz), 0.0f);
     }
-    // output.color += float4(DirectionalLight(input, CBLightParams.dirLight, viewDir, objectColor.xyz), 0.0f);
+    output.color += float4(DirectionalLight(input, CBLightParams.dirLight, viewDir, objectColor.xyz), 0.0f);
 
     output.debugColor = 0.0f;
     return output;

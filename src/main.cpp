@@ -175,6 +175,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR pCmdLine, int nCmdShow)
     g_SM.Initialize(device);
 
     Scene scn{};
+    scn.directionalLight.intensity = 0.05;
     Loader::LoadAssetsToScene(scn, "assets/beetle.obj", TransformDeg({0, -0.2, 0}));
     Loader::LoadAssetsToScene(scn, "assets/stanford-bunny.obj", TransformDeg({0.2, 0.6, 0}));
     Loader::LoadAssetsToScene(scn, "assets/cube.obj", TransformDeg({0, 0, 0}, {}, {4, 0.01, 4}));
@@ -188,10 +189,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR pCmdLine, int nCmdShow)
         light.position = {-1.0f, 1.0f, 0.5f};
         scn.pointLights.push_back(light);
 
-        // light.position = {0.0f, 1.5f, 1.0f};
-        // light.diffuseColor = {0.5, 0.3, 0.8};
-        // light.specularColor = {0.8, 0.5, 1.0f};
-        // scn.pointLights.push_back(light);
+        light.position = {0.0f, 1.5f, 1.0f};
+        light.diffuseColor = {0.5, 0.3, 0.8};
+        light.specularColor = {0.8, 0.5, 1.0f};
+        scn.pointLights.push_back(light);
     }
 
     Loader::UploadSceneBuffersToGPU(scn, device);
@@ -222,6 +223,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR pCmdLine, int nCmdShow)
         g_InputManager.Tick();
 
         scn.pointLights[0].position.x = sin(static_cast<float>(frame) / 1000.0f);
+        scn.pointLights[2].position.z = cos(static_cast<float>(frame) / 1000.0f);
 
 
         ++frame;
