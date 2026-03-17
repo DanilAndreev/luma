@@ -64,6 +64,19 @@ void SceneRenderer::Initialize(ID3D11Device *device, ID3D11DeviceContext *contex
     }
 
     {
+        D3D11_SAMPLER_DESC desc{};
+        desc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+        desc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+        desc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+        desc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+        desc.BorderColor[0] = 1.0f;
+        desc.MinLOD = 0;
+        //TODO: implement LODs.
+        desc.MaxLOD = 0;
+        m_Device->CreateSamplerState(&desc, &m_LightMapSMP);
+    }
+
+    {
         D3D11_TEXTURE2D_DESC desc{};
         desc.Format = DXGI_FORMAT_R32_TYPELESS;
         desc.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
@@ -187,7 +200,7 @@ void SceneRenderer::InitShadowmapResources(size_t maxDirectionalPointLight) noex
 
     D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc{};
     srvDesc.Format = DXGI_FORMAT_R32_FLOAT;
-    srvDesc.ViewDimension = D3D10_1_SRV_DIMENSION_TEXTURECUBEARRAY;
+    srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURECUBEARRAY;
     srvDesc.TextureCubeArray.MipLevels = 1;
     srvDesc.TextureCubeArray.First2DArrayFace = 0;
     srvDesc.TextureCubeArray.NumCubes = maxDirectionalPointLight;
@@ -352,9 +365,9 @@ void SceneRenderer::RenderMesh(const Scene* scene, const Mesh& mesh, bool depthO
     meshIA.vaOffsets[0] = 0;
     meshIA.vaStrides[0] = mesh.vaStride;
 
-    size_t vaActiveIdx = 0;
     for (size_t i = 0; i < VertexAttributesEntriesCount; ++i) {
-        if (bool(mesh.vaMask & static_cast<VertexAttributesMask>(1 << i))) {
+        auto maskItem = static_cast<VertexAttributesMask>(1 << i);
+        if (bool(mesh.vaMask & maskItem)) {
             vertexBuffers[i + 1] = mesh.vb;
             meshIA.vaOffsets[i + 1] = ResolveVAOffsetFromMask(i, mesh.vaMask, mesh.vaFlags);
         }
@@ -372,9 +385,21 @@ void SceneRenderer::RenderMesh(const Scene* scene, const Mesh& mesh, bool depthO
     if (!depthOnly) {
         ID3D11Buffer* PSCBs[] = {m_CameraParamsCB, m_MeshParamsCB, m_LightParamsCB};
         m_Ctx->PSSetConstantBuffers(0, std::size(PSCBs), PSCBs);
-        ID3D11ShaderResourceView* PSSRVs[] = {m_PointLightsSRV, m_DirLightShadowMapTexSRV, m_PointLightShadowCubemapTexarrSRV};
+
+        const Material& material = scene->materials[mesh.materialIdx];
+        ID3D11ShaderResourceView* PSSRVs[] = {
+            m_PointLightsSRV,
+            m_DirLightShadowMapTexSRV,
+            m_PointLightShadowCubemapTexarrSRV,
+            material.diffuseMapSRV,
+            material.specularMapSRV,
+            material.normalMapSRV,
+            material.heightMapSRV,
+        };
         m_Ctx->PSSetShaderResources(0, std::size(PSSRVs), PSSRVs);
-        m_Ctx->PSSetSamplers(0, 1, &m_ShadowMapSMP);
+
+        ID3D11SamplerState* PSSMPs[] = {m_ShadowMapSMP, m_LightMapSMP};
+        m_Ctx->PSSetSamplers(0, std::size(PSSMPs), PSSMPs);
     }
 
     m_Ctx->RSSetState(m_RasterizerState);
@@ -427,9 +452,17 @@ void SceneRenderer::UploadCameraParams() noexcept {
 void SceneRenderer::UploadMeshParams(const Scene* scene, const Mesh& mesh) noexcept {
     using namespace DirectX;
     HLSL::MeshParams params{};
-    params.material.shininess = 32.0f;
-    XMMATRIX transform = XMLoadFloat4x4(&mesh.transform);
-    XMStoreFloat4x4(&params.transform, XMMatrixTranspose(transform));
+    const Material& material = scene->materials[mesh.materialIdx];
+    params.material.shininess = material.shininess;
+    params.material.color = material.color;
+    params.material.hasDiffuseMap = material.diffuseMapSRV != nullptr;
+    params.material.hasSpecularMap = material.specularMapSRV != nullptr;
+    params.material.hasNormalMap = material.normalMapSRV != nullptr;
+    params.material.hasHeightMap = material.heightMapSRV != nullptr;
+
+    XMMATRIX modelToWorld = XMLoadFloat4x4(&mesh.transform);
+    XMStoreFloat4x4(&params.modelToWorld, XMMatrixTranspose(modelToWorld));
+    XMStoreFloat4x4(&params.modelToWorldNormal, XMMatrixTranspose(XMMatrixTranspose(XMMatrixInverse(nullptr, modelToWorld))));
     m_Ctx->UpdateSubresource(m_MeshParamsCB, 0, nullptr, &params, sizeof(params), 0);
 }
 
@@ -437,29 +470,28 @@ void SceneRenderer::UploadLightParams(const Scene *scene) noexcept {
     using namespace DirectX;
     HLSL::LightParams params{};
     params.pointLightCount = scene->pointLights.size();
-    params.dirLight.ambientColor = scene->directionalLight.ambientColor;
-    params.dirLight.diffuseColor = scene->directionalLight.diffuseColor;
-    params.dirLight.specularColor = scene->directionalLight.specularColor;
-    params.dirLight.direction = scene->directionalLight.direction;
-    params.dirLight.intensity = scene->directionalLight.intensity;
     params.dirLight.worldToLightProj = scene->directionalLight.worldToLightProj;
     params.dirLight.worldToLight = scene->directionalLight.worldToLight;
     params.dirLight.lightToProj = scene->directionalLight.lightToProj;
+    params.dirLight.color = scene->directionalLight.color;
+    params.dirLight.ambientIntensity = scene->directionalLight.ambientIntensity;
+    params.dirLight.direction = scene->directionalLight.direction;
+    params.dirLight.intensity = scene->directionalLight.intensity;
     m_Ctx->UpdateSubresource(m_LightParamsCB, 0, nullptr, &params, sizeof(params), 0);
 }
 
 void SceneRenderer::UploadPointLights(const Scene *scene) noexcept {
-    if (scene->pointLights.size() == 0)
+    if (scene->pointLights.empty())
         return;
 
-    std::vector<HLSL::PointLight> lights{};
-    lights.resize(scene->pointLights.size());
+    const size_t pointLightsCount = scene->pointLights.size();
+    assert(pointLightsCount <= 128);
+    HLSL::PointLight lights[128];
     for (size_t i = 0; i < scene->pointLights.size(); ++i) {
         using namespace DirectX;
         lights[i].position = scene->pointLights[i].position;
-        lights[i].ambientColor = scene->pointLights[i].ambientColor;
-        lights[i].diffuseColor = scene->pointLights[i].diffuseColor;
-        lights[i].specularColor = scene->pointLights[i].specularColor;
+        lights[i].ambientIntensity = scene->pointLights[i].ambientIntensity;
+        lights[i].color = scene->pointLights[i].color;
         lights[i].constantAttenuation = scene->pointLights[i].constantAttenuation;
         lights[i].linearAttenuation = scene->pointLights[i].linearAttenuation;
         lights[i].quadraticAttenuation = scene->pointLights[i].quadraticAttenuation;
@@ -468,5 +500,5 @@ void SceneRenderer::UploadPointLights(const Scene *scene) noexcept {
         lights[i].shadowMapProjFarPlane = scene->pointLights[i].shadowMapProjFarPlane;
         lights[i].shadowMapResolutionDim = LUMA_OMNIDIR_SHADOW_MAP_DIM;
     }
-    m_Ctx->UpdateSubresource(m_PointLights, 0, nullptr, lights.data(), lights.size() * sizeof(HLSL::PointLight), 0);
+    m_Ctx->UpdateSubresource(m_PointLights, 0, nullptr, lights, pointLightsCount * sizeof(lights[0]), 0);
 }

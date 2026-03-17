@@ -56,7 +56,7 @@ VSOut VSMain(uint vtID: SV_VertexID, uint iID: SV_InstanceID) {
 
     output.position = float4(cubeVertex, 1.0f) + float4(SRVPointLight[iID].position.xyz, 0.0f);
     output.position = mul(output.position, viewProj);
-    output.color = SRVPointLight[iID].diffuseColor;
+    output.color = SRVPointLight[iID].color;
     return output;
 }
 

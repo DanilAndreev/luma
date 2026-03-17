@@ -3,8 +3,8 @@
 
 #include "HLSLCPPCompat.hlsli"
 
-#define LUMA_DIR_SHADOW_MAP_DIM 4096;
-#define LUMA_OMNIDIR_SHADOW_MAP_DIM 2048;
+#define LUMA_DIR_SHADOW_MAP_DIM 2048;
+#define LUMA_OMNIDIR_SHADOW_MAP_DIM 1024;
 
 namespace HLSL {
 
@@ -17,13 +17,18 @@ namespace HLSL {
     };
 
     struct MaterialParams {
+        float3 color;
         float shininess;
 
-        float3 padding;
+        uint hasDiffuseMap;
+        uint hasSpecularMap;
+        uint hasNormalMap;
+        uint hasHeightMap;
     };
 
     struct MeshParams {
-        float4x4 transform;
+        float4x4 modelToWorld;
+        float4x4 modelToWorldNormal;
         MaterialParams material;
     };
 
@@ -31,30 +36,31 @@ namespace HLSL {
         float4x4 worldToLightProj;
         float4x4 worldToLight;
         float4x4 lightToProj;
-        float3 ambientColor;
-        float padding1;
-        float3 diffuseColor;
-        float padding2;
-        float3 specularColor;
-        float padding3;
+
+        float3 color;
+        float ambientIntensity;
+
         float3 direction;
         float intensity;
     };
 
     struct PointLight {
-        float3 ambientColor;
-        float constantAttenuation;
-        float3 diffuseColor;
-        float linearAttenuation;
-        float3 specularColor;
-        float quadraticAttenuation;
         float3 position;
+        float ambientIntensity;
+
+        float3 color;
+        float padding1;
+
+        float constantAttenuation;
+        float linearAttenuation;
+        float quadraticAttenuation;
         uint shadowMapResolutionDim;
 
         float4x4 shadowMapProjInv;
+
         float shadowMapProjFarPlane;
         float shadowMapProjNearPlane;
-        float2 padding;
+        float2 padding2;
     };
 
     struct LightParams {

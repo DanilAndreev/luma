@@ -43,6 +43,8 @@ protected:
     ID3D11DepthStencilView* m_DSV = nullptr;
     ID3D11Texture2D* m_DSVTexture = nullptr;
 
+    ID3D11SamplerState* m_LightMapSMP = nullptr;
+
     ID3D11Texture2D* m_DirLightShadowMapTex = nullptr;
     ID3D11DepthStencilView* m_DirLightShadowMapTexDSV = nullptr;
     ID3D11ShaderResourceView* m_DirLightShadowMapTexSRV = nullptr;

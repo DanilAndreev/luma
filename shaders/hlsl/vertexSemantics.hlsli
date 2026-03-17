@@ -5,16 +5,20 @@ struct VSIn
 {
     float4 position : POSITION;
     float4 normal : NORMAL;
-//    float4 texcoor0 : TEXCOORD0;
-//    float4 color0 : COLOR0;
+    float3 tangent : TANGENT0;
+    float3 bitangent : TANGENT1;
+    float2 texcoord0 : TEXCOORD0;
+    float4 color0 : COLOR0;
 };
 
 struct VSOut
 {
     float4 position : SV_POSITION;
     float4 normal : NORMAL;
-//    float4 texcoor0 : TEXCOORD0;
-//    float4 color0 : COLOR0;
+    float3 tangent : TANGENT0;
+    float3 bitangent : TANGENT1;
+    float2 texcoord0 : TEXCOORD0;
+    float4 color0 : COLOR0;
     float3 worldPos: POSISION;
 };
 

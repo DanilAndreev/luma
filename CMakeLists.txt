@@ -22,6 +22,7 @@ set(HEADER_FILES
 
 set(SOURCE_FILES
         src/main.cpp
+        src/stbImpl.cpp
         src/Globlas.cpp
         src/Scene.h
         src/Camera.cpp
@@ -49,7 +50,7 @@ target_link_libraries(luma PUBLIC dxgi.lib)
 target_link_libraries(luma PUBLIC dxguid.lib)
 target_include_directories(luma PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
 target_include_directories(luma PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/shaders)
-
+target_include_directories(luma PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/stb)
 set(ASSIMP_NO_EXPORT ON)
 set(ASSIMP_INSTALL OFF)
 target_link_libraries(luma PRIVATE assimp::assimp)
