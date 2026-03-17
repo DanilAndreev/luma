@@ -103,12 +103,13 @@ namespace Loader {
 			}
 		}
 
-		//if (mesh->mMaterialIndex >= 0) {
-		//	aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
-
-		//	std::vector<Texture> diffuseMaps = this->loadMaterialTextures(material, aiTextureType_DIFFUSE, "texture_diffuse", scene);
-		//	textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
-		//}
+		// aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
+		//
+		// aiString str;
+		// material->GetTexture(aiTextureType_NORMALS, 0, &str);
+		// if (!str.Empty()) {
+		// 	auto a = str;
+		// }
 
 		result.transform = transform;
 

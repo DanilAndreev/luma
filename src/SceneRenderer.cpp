@@ -449,7 +449,7 @@ void SceneRenderer::UploadLightParams(const Scene *scene) noexcept {
 }
 
 void SceneRenderer::UploadPointLights(const Scene *scene) noexcept {
-    if (scene->pointLights.size() == 0)
+    if (scene->pointLights.empty())
         return;
 
     const size_t pointLightsCount = scene->pointLights.size();
