@@ -352,7 +352,6 @@ void SceneRenderer::RenderMesh(const Scene* scene, const Mesh& mesh, bool depthO
     meshIA.vaOffsets[0] = 0;
     meshIA.vaStrides[0] = mesh.vaStride;
 
-    size_t vaActiveIdx = 0;
     for (size_t i = 0; i < VertexAttributesEntriesCount; ++i) {
         if (bool(mesh.vaMask & static_cast<VertexAttributesMask>(1 << i))) {
             vertexBuffers[i + 1] = mesh.vb;
@@ -452,8 +451,9 @@ void SceneRenderer::UploadPointLights(const Scene *scene) noexcept {
     if (scene->pointLights.size() == 0)
         return;
 
-    std::vector<HLSL::PointLight> lights{};
-    lights.resize(scene->pointLights.size());
+    const size_t pointLightsCount = scene->pointLights.size();
+    assert(pointLightsCount <= 128);
+    HLSL::PointLight lights[128];
     for (size_t i = 0; i < scene->pointLights.size(); ++i) {
         using namespace DirectX;
         lights[i].position = scene->pointLights[i].position;
@@ -468,5 +468,5 @@ void SceneRenderer::UploadPointLights(const Scene *scene) noexcept {
         lights[i].shadowMapProjFarPlane = scene->pointLights[i].shadowMapProjFarPlane;
         lights[i].shadowMapResolutionDim = LUMA_OMNIDIR_SHADOW_MAP_DIM;
     }
-    m_Ctx->UpdateSubresource(m_PointLights, 0, nullptr, lights.data(), lights.size() * sizeof(HLSL::PointLight), 0);
+    m_Ctx->UpdateSubresource(m_PointLights, 0, nullptr, lights, pointLightsCount * sizeof(lights[0]), 0);
 }

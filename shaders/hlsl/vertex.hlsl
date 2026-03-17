@@ -12,6 +12,10 @@ VSOut VSMain(VSIn input) {
     output.position = mul(input.position, MVP);
     //TODO: calculate normal matrix and transform normals.
     output.normal = input.normal;
+
+    //TODO: mult by model matrix
+    output.tangent = input.tangent;
+    output.bitangent = input.bitangent;
     //output.texcoor0 = input.texcoor0;
     //output.color0 = input.color0;
     float4 worldPos = mul(input.position, CBMeshParams.transform);

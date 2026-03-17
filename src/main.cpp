@@ -176,8 +176,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR pCmdLine, int nCmdShow)
 
     Scene scn{};
     scn.directionalLight.intensity = 0.05;
-    Loader::LoadAssetsToScene(scn, "assets/beetle.obj", TransformDeg({0, -0.2, 0}));
-    Loader::LoadAssetsToScene(scn, "assets/stanford-bunny.obj", TransformDeg({0.2, 0.6, 0}));
+    Loader::LoadAssetsToScene(scn, "assets/cottage_obj.obj", TransformDeg({0, 0, 0}, {}, {0.05, 0.05, 0.05}));
+    Loader::LoadAssetsToScene(scn, "assets/beetle.obj", TransformDeg({-1.2, -0.2, 0}));
+    Loader::LoadAssetsToScene(scn, "assets/stanford-bunny.obj", TransformDeg({-0.5, 0.8, 0}));
     Loader::LoadAssetsToScene(scn, "assets/cube.obj", TransformDeg({0, 0, 0}, {}, {4, 0.01, 4}));
 
     {

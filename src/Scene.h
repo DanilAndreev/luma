@@ -2,28 +2,26 @@
 
 #include <DirectXPackedVector.h>
 
-constexpr size_t VertexAttributesMaxTexCoords = 8;
-constexpr size_t VertexAttributesMaxColors = 8;
+constexpr size_t VertexAttributesMaxTexCoords = 6;
+constexpr size_t VertexAttributesMaxColors = 6;
 
 enum class VertexAttributesMask : uint64_t {
     None = 0x0, // Vertex has only float4 position per item
     Normals = 0x1 << 0, // float4 normal vector
-    TexCoords0 = 0x1 << 1, // float2 texture coordinetes
-    TexCoords1 = 0x1 << 2, // float2 texture coordinetes
-    TexCoords2 = 0x1 << 3, // float2 texture coordinetes
-    TexCoords3 = 0x1 << 4, // float2 texture coordinetes
-    TexCoords4 = 0x1 << 5, // float2 texture coordinetes
-    TexCoords5 = 0x1 << 6, // float2 texture coordinetes
-    TexCoords6 = 0x1 << 7, // float2 texture coordinetes
-    TexCoords7 = 0x1 << 8, // float2 texture coordinetes
-    Color0 = 0x1 << 9, // float4 color
-    Color1 = 0x1 << 10, // float4 color
-    Color2 = 0x1 << 11, // float4 color
-    Color3 = 0x1 << 12, // float4 color
-    Color4 = 0x1 << 13, // float4 color
-    Color5 = 0x1 << 14, // float4 color
-    Color6 = 0x1 << 15, // float4 color
-    Color7 = 0x1 << 16, // float4 color
+    Tangent = 0x1 << 1, // float4 tangent vector
+    Bitangent = 0x1 << 2, // float4 bitangent vector
+    TexCoords0 = 0x1 << 3, // float2 texture coordinates
+    TexCoords1 = 0x1 << 4, // float2 texture coordinates
+    TexCoords2 = 0x1 << 5, // float2 texture coordinates
+    TexCoords3 = 0x1 << 6, // float2 texture coordinates
+    TexCoords4 = 0x1 << 7, // float2 texture coordinates
+    TexCoords5 = 0x1 << 8, // float2 texture coordinates
+    Color0 = 0x1 << 10, // float4 color
+    Color1 = 0x1 << 11, // float4 color
+    Color2 = 0x1 << 12, // float4 color
+    Color3 = 0x1 << 13, // float4 color
+    Color4 = 0x1 << 14, // float4 color
+    Color5 = 0x1 << 15, // float4 color
     ValidMask = 0xFFFF1,
 };
 LUMA_DEFINE_BITMASK_ENUM(VertexAttributesMask);
@@ -31,23 +29,21 @@ constexpr size_t VertexAttributesEntriesCount = std::popcount(static_cast<uint64
 
 constexpr size_t VertexAttributesEntriesSizeDefault[VertexAttributesEntriesCount] = {
     // sizeof(DirectX::XMFLOAT4) - Float4 position is always first
-    sizeof(DirectX::XMFLOAT4), // Normals
+    sizeof(DirectX::XMFLOAT3), // Normal
+    sizeof(DirectX::XMFLOAT3), // Tangent
+    sizeof(DirectX::XMFLOAT3), // Bitangent
     sizeof(DirectX::XMFLOAT2), // TexCoords0
     sizeof(DirectX::XMFLOAT2), // TexCoords1
     sizeof(DirectX::XMFLOAT2), // TexCoords2
     sizeof(DirectX::XMFLOAT2), // TexCoords3
     sizeof(DirectX::XMFLOAT2), // TexCoords4
     sizeof(DirectX::XMFLOAT2), // TexCoords5
-    sizeof(DirectX::XMFLOAT2), // TexCoords6
-    sizeof(DirectX::XMFLOAT2), // TexCoords7
     sizeof(DirectX::XMFLOAT4), // Color0
     sizeof(DirectX::XMFLOAT4), // Color1
     sizeof(DirectX::XMFLOAT4), // Color2
     sizeof(DirectX::XMFLOAT4), // Color3
     sizeof(DirectX::XMFLOAT4), // Color4
     sizeof(DirectX::XMFLOAT4), // Color5
-    sizeof(DirectX::XMFLOAT4), // Color6
-    sizeof(DirectX::XMFLOAT4), // Color7
 };
 
 //TODO: align everything to 4/2/1
@@ -109,6 +105,7 @@ inline constexpr size_t ResolveVAOffsetFromMask(size_t vaIdx, VertexAttributesMa
 }
 
 struct Mesh {
+    std::string name = "UnnamedMesh";
     VertexAttributesMask vaMask = VertexAttributesMask::None;
     VertexAttributesFlags vaFlags = {};
 
