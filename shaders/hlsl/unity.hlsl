@@ -104,7 +104,10 @@ PSOut PSMain(VSOut input) {
 
 	float3 normal;
 	if (CBMeshParams.material.hasNormalMap) {
-		normal = mul(SRVNormalMap.Sample(LightMapSMP, input.texcoord0) * 2.0f - 1.0f, TBN);
+	    float3 sampledNormal = SRVNormalMap.Sample(LightMapSMP, input.texcoord0) * 2.0f - 1.0f;
+	    //TODO: inverted for texture
+	    sampledNormal.y *= -1;
+		normal = mul(sampledNormal, TBN);
 	} else {
 	    normal = normalize(input.normal.xyz);
 	}

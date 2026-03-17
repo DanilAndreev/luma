@@ -176,20 +176,27 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR pCmdLine, int nCmdShow)
 
     Scene scn{};
     scn.directionalLight.intensity = 0.05;
-    Loader::LoadAssetsToScene(scn, "assets/cottage_obj.obj", TransformDeg({0, 0, 0}, {}, {0.05, 0.05, 0.05}));
-    Loader::LoadAssetsToScene(scn, "assets/beetle.obj", TransformDeg({-1.2, -0.2, 0}));
-    Loader::LoadAssetsToScene(scn, "assets/stanford-bunny.obj", TransformDeg({-0.5, 0.8, 0}));
+    Loader::LoadAssetsToScene(scn, "assets/Stone.obj", TransformDeg({0, 0, 0}, {}, {0.1, 0.1, 0.1}));
+    Loader::LoadAssetsToScene(scn, "assets/knight/SKM_DKF_Armor.obj", TransformDeg({0, 0, -1}, {0, -180, 0}, {0.005, 0.005, 0.005}));
+
+    Loader::LoadAssetsToScene(scn, "assets/cottage_obj.obj", TransformDeg({0, 0, -2}, {}, {0.05, 0.05, 0.05}));
+    // Loader::LoadAssetsToScene(scn, "assets/beetle.obj", TransformDeg({-1.2, -0.2, 0}));
+    // Loader::LoadAssetsToScene(scn, "assets/stanford-bunny.obj", TransformDeg({-0.5, 0.8, 0}));
     Loader::LoadAssetsToScene(scn, "assets/cube.obj", TransformDeg({0, 0, 0}, {}, {4, 0.01, 4}));
+
+
 
     {
         auto& customMat = scn.materials.emplace_back();
-        scn.meshes[4].materialIdx = 1;
+        scn.meshes[1].materialIdx = scn.materials.size() - 1;
+        scn.meshes[2].materialIdx = scn.materials.size() - 1;
+        scn.meshes[3].materialIdx = scn.materials.size() - 1;
 
-        Loader::LoadTexture("assets/cottage_normal.png", device, &customMat.normalMap);
+        Loader::LoadTexture("assets/normal.png", device, &customMat.normalMap);
         const char normalMapName[] = "Normal Map";
         customMat.normalMap->SetPrivateData(WKPDID_D3DDebugObjectName, std::size(normalMapName), normalMapName);
 
-        Loader::LoadTexture("assets/cottage_diffuse.png", device, &customMat.diffuseMap);
+        Loader::LoadTexture("assets/diffuso.png", device, &customMat.diffuseMap);
         const char diffuseMapName[] = "Diffuse Map";
         customMat.diffuseMap->SetPrivateData(WKPDID_D3DDebugObjectName, std::size(diffuseMapName), diffuseMapName);
 
@@ -208,8 +215,38 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR pCmdLine, int nCmdShow)
     }
 
     {
+        const auto start = 4;
+
+        auto& customMat = scn.materials.emplace_back();
+        scn.meshes[start + 0].materialIdx = scn.materials.size() - 1;
+        scn.meshes[start + 1].materialIdx = scn.materials.size() - 1;
+        scn.meshes[start + 2].materialIdx = scn.materials.size() - 1;
+        scn.meshes[start + 3].materialIdx = scn.materials.size() - 1;
+        scn.meshes[start + 4].materialIdx = scn.materials.size() - 1;
+        scn.meshes[start + 5].materialIdx = scn.materials.size() - 1;
+        scn.meshes[start + 6].materialIdx = scn.materials.size() - 1;
+
+        Loader::LoadTexture("assets/knight/textures/T_DKM_Armor_AlbedoTransparency.tga", device, &customMat.diffuseMap);
+
+        Loader::LoadTexture("assets/knight/textures/T_DKM_Armor_Normal.tga", device, &customMat.normalMap);
+
+        D3D11_TEXTURE2D_DESC texDesc{};
+        customMat.normalMap->GetDesc(&texDesc);
+
+        D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc{};
+        srvDesc.Format = texDesc.Format;
+        srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+        srvDesc.Texture2D.MipLevels = 1;
+        device->CreateShaderResourceView(customMat.normalMap, &srvDesc, &customMat.normalMapSRV);
+
+        customMat.diffuseMap->GetDesc(&texDesc);
+        srvDesc.Format = texDesc.Format;
+        device->CreateShaderResourceView(customMat.diffuseMap, &srvDesc, &customMat.diffuseMapSRV);
+    }
+
+    {
         PointLight light{};
-        light.position = {1.0f, 1.0f, 1.0f};
+        light.position = {1.0f, 1.0f, -2.0f};
         light.constantAttenuation = 10.0;
         scn.pointLights.push_back(light);
 

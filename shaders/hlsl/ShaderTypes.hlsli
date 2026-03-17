@@ -3,8 +3,8 @@
 
 #include "HLSLCPPCompat.hlsli"
 
-#define LUMA_DIR_SHADOW_MAP_DIM 4096;
-#define LUMA_OMNIDIR_SHADOW_MAP_DIM 2048;
+#define LUMA_DIR_SHADOW_MAP_DIM 2048;
+#define LUMA_OMNIDIR_SHADOW_MAP_DIM 1024;
 
 namespace HLSL {
 

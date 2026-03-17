@@ -3,9 +3,18 @@
 #include "InputDeviceState.h"
 
 void InputManager::Tick() noexcept {
+    static clock_t prev = clock();
+
+    constexpr float speed = 0.003f;
+
+    clock_t curTime = clock();
+    clock_t delta = curTime - prev;
+
+
+
     DirectX::XMFLOAT3 movementDelta{};
     DirectX::XMFLOAT2 rotationDelta{};
-    float deltaTime = 0.1;
+    float deltaTime = static_cast<float>(delta) * speed;
     if (g_Input.Pressed(KeyID::A)) {
         movementDelta.x += 1;
     }
@@ -34,4 +43,6 @@ void InputManager::Tick() noexcept {
         g_Cam.MoveBy({movementDelta.x * deltaTime, movementDelta.y * deltaTime, movementDelta.z * deltaTime});
     }
     g_Cam.RotateBy({rotationDelta.x * deltaTime, rotationDelta.y * deltaTime});
+
+    prev = curTime;
 }
