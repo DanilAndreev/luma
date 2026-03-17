@@ -64,6 +64,19 @@ void SceneRenderer::Initialize(ID3D11Device *device, ID3D11DeviceContext *contex
     }
 
     {
+        D3D11_SAMPLER_DESC desc{};
+        desc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+        desc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+        desc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+        desc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+        desc.BorderColor[0] = 1.0f;
+        desc.MinLOD = 0;
+        //TODO: implement LODs.
+        desc.MaxLOD = 0;
+        m_Device->CreateSamplerState(&desc, &m_LightMapSMP);
+    }
+
+    {
         D3D11_TEXTURE2D_DESC desc{};
         desc.Format = DXGI_FORMAT_R32_TYPELESS;
         desc.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
@@ -384,7 +397,9 @@ void SceneRenderer::RenderMesh(const Scene* scene, const Mesh& mesh, bool depthO
             material.heightMapSRV,
         };
         m_Ctx->PSSetShaderResources(0, std::size(PSSRVs), PSSRVs);
-        m_Ctx->PSSetSamplers(0, 1, &m_ShadowMapSMP);
+
+        ID3D11SamplerState* PSSMPs[] = {m_ShadowMapSMP, m_LightMapSMP};
+        m_Ctx->PSSetSamplers(0, std::size(PSSMPs), PSSMPs);
     }
 
     m_Ctx->RSSetState(m_RasterizerState);
