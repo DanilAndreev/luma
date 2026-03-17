@@ -187,7 +187,7 @@ void SceneRenderer::InitShadowmapResources(size_t maxDirectionalPointLight) noex
 
     D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc{};
     srvDesc.Format = DXGI_FORMAT_R32_FLOAT;
-    srvDesc.ViewDimension = D3D10_1_SRV_DIMENSION_TEXTURECUBEARRAY;
+    srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURECUBEARRAY;
     srvDesc.TextureCubeArray.MipLevels = 1;
     srvDesc.TextureCubeArray.First2DArrayFace = 0;
     srvDesc.TextureCubeArray.NumCubes = maxDirectionalPointLight;
@@ -372,7 +372,14 @@ void SceneRenderer::RenderMesh(const Scene* scene, const Mesh& mesh, bool depthO
     if (!depthOnly) {
         ID3D11Buffer* PSCBs[] = {m_CameraParamsCB, m_MeshParamsCB, m_LightParamsCB};
         m_Ctx->PSSetConstantBuffers(0, std::size(PSCBs), PSCBs);
-        ID3D11ShaderResourceView* PSSRVs[] = {m_PointLightsSRV, m_DirLightShadowMapTexSRV, m_PointLightShadowCubemapTexarrSRV};
+
+        const Material& material = scene->materials[mesh.materialIdx];
+        ID3D11ShaderResourceView* PSSRVs[] = {
+            m_PointLightsSRV,
+            m_DirLightShadowMapTexSRV,
+            m_PointLightShadowCubemapTexarrSRV,
+            material.normalTexSRV,
+        };
         m_Ctx->PSSetShaderResources(0, std::size(PSSRVs), PSSRVs);
         m_Ctx->PSSetSamplers(0, 1, &m_ShadowMapSMP);
     }

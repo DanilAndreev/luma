@@ -10,6 +10,8 @@ StructuredBuffer<HLSL::PointLight> SRVPointLight : register(t0);
 Texture2D<float> DirLightShadowMap : register(t1);
 TextureCubeArray<float> PointLightShadowMap : register(t2);
 
+Texture2D<float3> NormalMap : register(t3);
+
 SamplerState ShadowMapSMP : register(s0);
 
 struct PSOut
@@ -116,6 +118,6 @@ PSOut PSMain(VSOut input) {
     }
     output.color += float4(DirectionalLight(input, CBLightParams.dirLight, viewDir, objectColor), 0.0f);
 
-    output.debugColor = 0.0f;
+    output.debugColor = float4(NormalMap.Sample(ShadowMapSMP, input.texcoord0), 1.0f);
     return output;
 }

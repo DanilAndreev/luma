@@ -5,6 +5,8 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 
+#include <stb_image.h>
+
 #include <hlsl/ShaderTypes.hlsli>
 
 
@@ -238,6 +240,51 @@ namespace Loader {
 			light.shadowmapProj = XMMatrixPerspectiveFovLH(XM_PIDIV2, 1, light.shadowMapProjNearPlane, light.shadowMapProjFarPlane);
 			light.shadowmapProjInv = XMMatrixInverse(nullptr, light.shadowmapProj);
 		}
+		return true;
+	}
+
+	bool LoadTexture(const std::filesystem::path& path, ID3D11Device* device, ID3D11Texture2D** outTexture) noexcept {
+		int width = 0, height = 0, channels = 0;
+		auto status = stbi_info(path.string().c_str(), &width, &height, &channels);
+		assert(status);
+		channels = channels == 3 ? 4 : channels;
+
+		stbi_us *img = stbi_load_16(path.string().c_str(), &width, &height, nullptr, channels);
+		if (img == NULL) {
+			printf("Error in loading the image\n");
+			exit(1);
+		}
+
+		assert(channels <= 4);
+		assert(channels > 0);
+
+		D3D11_TEXTURE2D_DESC desc{};
+		switch (channels) {
+			case 1:
+				desc.Format = DXGI_FORMAT_R16_SNORM;
+				break;
+			case 2:
+				desc.Format = DXGI_FORMAT_R16G16_SNORM;
+				break;
+			case 3:
+			default:
+				desc.Format = DXGI_FORMAT_R16G16B16A16_UNORM;
+		}
+		desc.ArraySize = 1;
+		desc.Usage = D3D11_USAGE_DEFAULT;
+		desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+		desc.CPUAccessFlags = 0;
+		desc.Width = width;
+		desc.Height = height;
+		desc.MipLevels = 1;
+		desc.SampleDesc.Count = 1;
+
+		D3D11_SUBRESOURCE_DATA payload{};
+		payload.pSysMem = img;
+		payload.SysMemPitch = width * sizeof(img[0]) * channels;
+
+		device->CreateTexture2D(&desc, &payload, outTexture);
+		stbi_image_free(img);
 		return true;
 	}
 }

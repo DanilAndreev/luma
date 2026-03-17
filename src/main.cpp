@@ -182,6 +182,25 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR pCmdLine, int nCmdShow)
     Loader::LoadAssetsToScene(scn, "assets/cube.obj", TransformDeg({0, 0, 0}, {}, {4, 0.01, 4}));
 
     {
+        auto& customMat = scn.materials.emplace_back();
+        scn.meshes[4].materialIdx = 1;
+
+        Loader::LoadTexture("assets/cottage_normal.png", device, &customMat.normalTex);
+        const char texName[] = "Normal Map";
+        customMat.normalTex->SetPrivateData(WKPDID_D3DDebugObjectName, std::size(texName), texName);
+
+        D3D11_TEXTURE2D_DESC texDesc{};
+        customMat.normalTex->GetDesc(&texDesc);
+
+        D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc{};
+        srvDesc.Format = texDesc.Format;
+        srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+        srvDesc.Texture2D.MipLevels = 1;
+        device->CreateShaderResourceView(customMat.normalTex, &srvDesc, &customMat.normalTexSRV);
+
+    }
+
+    {
         PointLight light{};
         light.position = {1.0f, 1.0f, 1.0f};
         light.constantAttenuation = 10.0;
