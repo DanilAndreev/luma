@@ -427,7 +427,17 @@ void SceneRenderer::UploadCameraParams() noexcept {
 void SceneRenderer::UploadMeshParams(const Scene* scene, const Mesh& mesh) noexcept {
     using namespace DirectX;
     HLSL::MeshParams params{};
-    params.material.shininess = 32.0f;
+    const Material& material = scene->materials[mesh.materialIdx];
+    params.material.shininess = material.shininess;
+    params.material.ambientColor = material.ambientColor;
+    params.material.diffuseColor = material.diffuseColor;
+    params.material.specularColor = material.specularColor;
+    params.material.hasAmbientColorTex = material.ambientTex != nullptr;
+    params.material.hasDiffuseColorTex = material.diffuseTex != nullptr;
+    params.material.hasSpecularColorTex = material.specularTex != nullptr;
+    params.material.hasNormalTex = material.normalTex != nullptr;
+    params.material.hasHeightTex = material.heightTex != nullptr;
+
     XMMATRIX transform = XMLoadFloat4x4(&mesh.transform);
     XMStoreFloat4x4(&params.transform, XMMatrixTranspose(transform));
     m_Ctx->UpdateSubresource(m_MeshParamsCB, 0, nullptr, &params, sizeof(params), 0);

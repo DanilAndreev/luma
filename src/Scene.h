@@ -115,6 +115,8 @@ struct Mesh {
     ID3D11Buffer* vb = nullptr;
     ID3D11Buffer* ib = nullptr;
     ID3D11InputLayout* inputLayout = nullptr;
+
+    size_t materialIdx;
 };
 
 struct MeshInstance {
@@ -123,10 +125,31 @@ struct MeshInstance {
     bool opaque;
 };
 
+struct Material {
+    DirectX::XMFLOAT3 ambientColor = {0.7f, 0.7f, 0.7f};
+    DirectX::XMFLOAT3 diffuseColor = {0.7f, 0.7f, 0.7f};
+    DirectX::XMFLOAT3 specularColor = {0.7f, 0.7f, 0.7f};
+    float shininess = 32.0f;
+
+    // TODO: move to scene texture pool for de-duplication.
+    //       Also float3 and float textures could be joined to float4 and split with views.
+    ID3D11Texture2D* ambientTex = nullptr;
+    ID3D11Texture2D* diffuseTex = nullptr;
+    ID3D11Texture2D* specularTex = nullptr;
+    ID3D11Texture2D* normalTex = nullptr;
+    ID3D11Texture2D* heightTex = nullptr;
+
+    ID3D11ShaderResourceView* ambientTexSRV = nullptr;
+    ID3D11ShaderResourceView* diffuseTexSRV = nullptr;
+    ID3D11ShaderResourceView* specularTexSRV = nullptr;
+    ID3D11ShaderResourceView* normalTexSRV = nullptr;
+    ID3D11ShaderResourceView* heightTexSRV = nullptr;
+};
+
 struct DirectionalLight {
-    DirectX::XMFLOAT3 ambientColor = {0.1f, 0.1f, 0.1f};
-    DirectX::XMFLOAT3 diffuseColor = {1.0f, 1.0f, 1.0f};
-    DirectX::XMFLOAT3 specularColor = {1.0f, 1.0f, 1.0f};
+    DirectX::XMFLOAT3 ambientColor = {0.1f, 0.1f, 0.05f};
+    DirectX::XMFLOAT3 diffuseColor = {1.0f, 1.0f, 0.5f};
+    DirectX::XMFLOAT3 specularColor = {1.0f, 1.0f, 0.5f};
     DirectX::XMFLOAT3 direction = {-1.0f, -1.0f, -1.0f};
     float intensity = 0.3;
 
@@ -148,14 +171,14 @@ struct PointLight {
     float shadowMapProjNearPlane = 1.0f;
     float shadowMapProjFarPlane = 25.0f;
 
-    DirectX::XMMATRIX shadowmapProj;
-    DirectX::XMMATRIX shadowmapProjInv;
+    DirectX::XMMATRIX shadowmapProj = DirectX::XMMatrixIdentity();
+    DirectX::XMMATRIX shadowmapProjInv = DirectX::XMMatrixIdentity();
 };
 
 struct Scene {
     std::vector<Mesh> meshes{};
     std::vector<MeshInstance> instances{};
+    std::vector<Material> materials{Material{}};
     std::vector<PointLight> pointLights{};
     DirectionalLight directionalLight{};
 };
-

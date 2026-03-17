@@ -17,9 +17,17 @@ namespace HLSL {
     };
 
     struct MaterialParams {
-        float shininess;
+        float3 ambientColor;
+        uint hasAmbientColorTex;
+        float3 diffuseColor;
+        uint hasDiffuseColorTex;
+        float3 specularColor;
+        uint hasSpecularColorTex;
 
-        float3 padding;
+        uint hasNormalTex;
+        uint hasHeightTex;
+        float shininess;
+        float padding;
     };
 
     struct MeshParams {

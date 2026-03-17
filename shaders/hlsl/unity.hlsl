@@ -18,6 +18,12 @@ struct PSOut
     float4 debugColor : SV_Target1;
 };
 
+struct ObjectColor {
+    float3 ambientColor;
+    float3 diffuseColor;
+    float3 specularColor;
+};
+
 float PointLightShadowCalculation(HLSL::PointLight light, uint lightIdx, float3 worldPos) {
     float3 fragToLight = worldPos - light.position;
     float closestDepth = PointLightShadowMap.Sample(ShadowMapSMP, float4(fragToLight, lightIdx));
@@ -27,7 +33,7 @@ float PointLightShadowCalculation(HLSL::PointLight light, uint lightIdx, float3 
     return currentDepth - bias > closestDepthLinear ? 1.0 : 0.0;
 }
 
-float3 PointLight(VSOut input, HLSL::PointLight light, uint lightIdx, float3 viewDir, float3 objectColor) {
+float3 PointLight(VSOut input, HLSL::PointLight light, uint lightIdx, float3 viewDir, ObjectColor objectColor) {
     float3 normal = normalize(input.normal.xyz);
     float3 lightDir = normalize(light.position.xyz - input.worldPos);
     float diffuseStrength = max(dot(normal, lightDir), 0.0);
@@ -37,9 +43,9 @@ float3 PointLight(VSOut input, HLSL::PointLight light, uint lightIdx, float3 vie
     float lightDistance = length(light.position.xyz - input.worldPos);
     float attenuation = 1.0 / (light.constantAttenuation + light.linearAttenuation * lightDistance + light.quadraticAttenuation * (lightDistance * lightDistance));
 
-    float3 ambient  = light.ambientColor * objectColor;
-    float3 diffuse  = light.diffuseColor * diffuseStrength * objectColor;
-    float3 specular = light.specularColor * specularStrength * objectColor;
+    float3 ambient  = light.ambientColor * objectColor.ambientColor;
+    float3 diffuse  = light.diffuseColor * diffuseStrength * objectColor.diffuseColor;
+    float3 specular = light.specularColor * specularStrength * objectColor.specularColor;
 
     float shadow = PointLightShadowCalculation(light, lightIdx, input.worldPos);
     return ambient * attenuation + (1 - shadow) * (diffuse * attenuation + specular * attenuation);
@@ -76,7 +82,7 @@ float DirlightShadowCalculation(float4 posLightSpace)
     return shadow / 9.0f;
 }
 
-float3 DirectionalLight(VSOut input, HLSL::DirectionalLight light, float3 viewDir, float3 objectColor) {
+float3 DirectionalLight(VSOut input, HLSL::DirectionalLight light, float3 viewDir, ObjectColor objectColor) {
 
     float3 normal = normalize(input.normal.xyz);
     float3 lightDir = normalize(-light.direction);
@@ -85,9 +91,9 @@ float3 DirectionalLight(VSOut input, HLSL::DirectionalLight light, float3 viewDi
     float3 halfwayDir = normalize(lightDir + viewDir);
     float specularStrength = pow(max(dot(normal, halfwayDir), 0.0), CBMeshParams.material.shininess);
 
-    float3 ambient  = light.ambientColor * objectColor;
-    float3 diffuse  = light.diffuseColor * diffuseStrength * objectColor;
-    float3 specular = light.specularColor * specularStrength * objectColor;
+    float3 ambient  = light.ambientColor * objectColor.ambientColor;
+    float3 diffuse  = light.diffuseColor * diffuseStrength * objectColor.diffuseColor;
+    float3 specular = light.specularColor * specularStrength * objectColor.specularColor;
 
     float4 lightSpacePos = mul(float4(input.worldPos, 1.0f), light.worldToLightProj);
     float shadow = DirlightShadowCalculation(lightSpacePos);
@@ -97,14 +103,18 @@ float3 DirectionalLight(VSOut input, HLSL::DirectionalLight light, float3 viewDi
 PSOut PSMain(VSOut input) {
     float3 viewDir = normalize(CBCameraParams.worldPos - input.worldPos);
 
-    float4 objectColor = float4(1.0f, 0.5f, 0.0f, 1.0f); // TODO: load color from texmap
+	// TODO: load color from texmap if present
+	ObjectColor objectColor;
+	objectColor.ambientColor = CBMeshParams.material.ambientColor;
+	objectColor.diffuseColor = CBMeshParams.material.diffuseColor;
+	objectColor.specularColor = CBMeshParams.material.specularColor;
 
     PSOut output;
     output.color = 0.0f;
     for (uint i = 0; i < CBLightParams.pointLightCount; ++i) {
-        output.color += float4(PointLight(input, SRVPointLight[i], i, viewDir, objectColor.xyz), 0.0f);
+        output.color += float4(PointLight(input, SRVPointLight[i], i, viewDir, objectColor), 0.0f);
     }
-    output.color += float4(DirectionalLight(input, CBLightParams.dirLight, viewDir, objectColor.xyz), 0.0f);
+    output.color += float4(DirectionalLight(input, CBLightParams.dirLight, viewDir, objectColor), 0.0f);
 
     output.debugColor = 0.0f;
     return output;
