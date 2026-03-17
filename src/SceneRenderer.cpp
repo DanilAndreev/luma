@@ -460,8 +460,9 @@ void SceneRenderer::UploadMeshParams(const Scene* scene, const Mesh& mesh) noexc
     params.material.hasNormalMap = material.normalMapSRV != nullptr;
     params.material.hasHeightMap = material.heightMapSRV != nullptr;
 
-    XMMATRIX transform = XMLoadFloat4x4(&mesh.transform);
-    XMStoreFloat4x4(&params.transform, XMMatrixTranspose(transform));
+    XMMATRIX modelToWorld = XMLoadFloat4x4(&mesh.transform);
+    XMStoreFloat4x4(&params.modelToWorld, XMMatrixTranspose(modelToWorld));
+    XMStoreFloat4x4(&params.modelToWorldNormal, XMMatrixTranspose(XMMatrixTranspose(XMMatrixInverse(nullptr, modelToWorld))));
     m_Ctx->UpdateSubresource(m_MeshParamsCB, 0, nullptr, &params, sizeof(params), 0);
 }
 

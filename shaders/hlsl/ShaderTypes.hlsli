@@ -27,7 +27,8 @@ namespace HLSL {
     };
 
     struct MeshParams {
-        float4x4 transform;
+        float4x4 modelToWorld;
+        float4x4 modelToWorldNormal;
         MaterialParams material;
     };
 
