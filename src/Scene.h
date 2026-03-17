@@ -22,7 +22,7 @@ enum class VertexAttributesMask : uint64_t {
     Color3 = 0x1 << 13, // float4 color
     Color4 = 0x1 << 14, // float4 color
     Color5 = 0x1 << 15, // float4 color
-    ValidMask = 0xFFFF1,
+    ValidMask = 0xFFFF,
 };
 LUMA_DEFINE_BITMASK_ENUM(VertexAttributesMask);
 constexpr size_t VertexAttributesEntriesCount = std::popcount(static_cast<uint64_t>(VertexAttributesMask::ValidMask));
@@ -48,23 +48,21 @@ constexpr size_t VertexAttributesEntriesSizeDefault[VertexAttributesEntriesCount
 
 //TODO: align everything to 4/2/1
 constexpr size_t VertexAttributesEntriesSizeHalf[VertexAttributesEntriesCount] = {
-    sizeof(DirectX::PackedVector::XMHALF4), // Normals
+    sizeof(DirectX::PackedVector::XMHALF4), // Normal
+    sizeof(DirectX::PackedVector::XMHALF4), // Tangent
+    sizeof(DirectX::PackedVector::XMHALF4), // Bitangent
     sizeof(DirectX::PackedVector::XMHALF2), // TexCoords0
     sizeof(DirectX::PackedVector::XMHALF2), // TexCoords1
     sizeof(DirectX::PackedVector::XMHALF2), // TexCoords2
     sizeof(DirectX::PackedVector::XMHALF2), // TexCoords3
     sizeof(DirectX::PackedVector::XMHALF2), // TexCoords4
     sizeof(DirectX::PackedVector::XMHALF2), // TexCoords5
-    sizeof(DirectX::PackedVector::XMHALF2), // TexCoords6
-    sizeof(DirectX::PackedVector::XMHALF2), // TexCoords7
     sizeof(DirectX::PackedVector::XMHALF4), // Color0
     sizeof(DirectX::PackedVector::XMHALF4), // Color1
     sizeof(DirectX::PackedVector::XMHALF4), // Color2
     sizeof(DirectX::PackedVector::XMHALF4), // Color3
     sizeof(DirectX::PackedVector::XMHALF4), // Color4
     sizeof(DirectX::PackedVector::XMHALF4), // Color5
-    sizeof(DirectX::PackedVector::XMHALF4), // Color6
-    sizeof(DirectX::PackedVector::XMHALF4), // Color7
 };
 
 enum class VertexAttributesFlags : uint32_t {

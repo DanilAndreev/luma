@@ -7,8 +7,8 @@ struct VSIn
     float4 normal : NORMAL;
     float3 tangent : TANGENT0;
     float3 bitangent : TANGENT1;
-//    float4 texcoor0 : TEXCOORD0;
-//    float4 color0 : COLOR0;
+    float4 texcoor0 : TEXCOORD0;
+    float4 color0 : COLOR0;
 };
 
 struct VSOut
@@ -17,8 +17,8 @@ struct VSOut
     float4 normal : NORMAL;
     float3 tangent : TANGENT0;
     float3 bitangent : TANGENT1;
-    // float4 texcoor0 : TEXCOORD0;
-    // float4 color0 : COLOR0;
+    float4 texcoor0 : TEXCOORD0;
+    float4 color0 : COLOR0;
     float3 worldPos: POSISION;
 };
 

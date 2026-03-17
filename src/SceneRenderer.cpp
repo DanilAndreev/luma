@@ -353,7 +353,8 @@ void SceneRenderer::RenderMesh(const Scene* scene, const Mesh& mesh, bool depthO
     meshIA.vaStrides[0] = mesh.vaStride;
 
     for (size_t i = 0; i < VertexAttributesEntriesCount; ++i) {
-        if (bool(mesh.vaMask & static_cast<VertexAttributesMask>(1 << i))) {
+        auto maskItem = static_cast<VertexAttributesMask>(1 << i);
+        if (bool(mesh.vaMask & maskItem)) {
             vertexBuffers[i + 1] = mesh.vb;
             meshIA.vaOffsets[i + 1] = ResolveVAOffsetFromMask(i, mesh.vaMask, mesh.vaFlags);
         }

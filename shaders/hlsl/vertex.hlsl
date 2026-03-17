@@ -16,8 +16,8 @@ VSOut VSMain(VSIn input) {
     //TODO: mult by model matrix
     output.tangent = input.tangent;
     output.bitangent = input.bitangent;
-    //output.texcoor0 = input.texcoor0;
-    //output.color0 = input.color0;
+    output.texcoor0 = input.texcoor0;
+    output.color0 = input.color0;
     float4 worldPos = mul(input.position, CBMeshParams.transform);
     output.worldPos = worldPos.xyz / worldPos.w;
     return output;

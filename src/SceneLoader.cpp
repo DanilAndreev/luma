@@ -150,11 +150,16 @@ namespace Loader {
 			D3D11_SUBRESOURCE_DATA data{};
 			data.pSysMem = mesh.vertices.data();
 			device->CreateBuffer(&desc, &data, &mesh.vb);
+			std::string vbName = mesh.name + ".VB";
+			mesh.vb->SetPrivateData(WKPDID_D3DDebugObjectName, vbName.length(), vbName.c_str());
+
 
 			desc.ByteWidth = mesh.indices.size() * sizeof(mesh.indices[0]);
 			desc.BindFlags = D3D11_BIND_INDEX_BUFFER;
 			data.pSysMem = mesh.indices.data();
 			device->CreateBuffer(&desc, &data, &mesh.ib);
+			std::string ibName = mesh.name + ".IB";
+			mesh.ib->SetPrivateData(WKPDID_D3DDebugObjectName, ibName.length(), ibName.c_str());
 
 
 			// --------- IA -------------------------------------------------------------
@@ -168,9 +173,7 @@ namespace Loader {
 			inputElements[inputSlot].SemanticIndex = 0;
 			++inputSlot;
 
-			const auto format = bool(mesh.vaFlags & VertexAttributesFlags::HalfNormals)
-									? DXGI_FORMAT_R16G16B16A16_FLOAT
-									: DXGI_FORMAT_R32G32B32A32_FLOAT;
+			const auto format = DXGI_FORMAT_R32G32B32_FLOAT;
 			inputElements[inputSlot].Format = format;
 			inputElements[inputSlot].InputSlot = inputSlot;
 			inputElements[inputSlot].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
