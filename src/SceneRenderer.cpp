@@ -6,7 +6,7 @@ void SceneRenderer::Initialize(ID3D11Device *device, ID3D11DeviceContext *contex
     m_Ctx = context;
 
     D3D11_RASTERIZER_DESC rasterizerDesc{};
-    rasterizerDesc.CullMode = D3D11_CULL_NONE;
+    rasterizerDesc.CullMode = D3D11_CULL_BACK;
     rasterizerDesc.ScissorEnable = false;
     rasterizerDesc.AntialiasedLineEnable = false;
     rasterizerDesc.DepthBias = 0;
@@ -14,7 +14,6 @@ void SceneRenderer::Initialize(ID3D11Device *device, ID3D11DeviceContext *contex
     rasterizerDesc.MultisampleEnable = false;
 
     m_Device->CreateRasterizerState(&rasterizerDesc, &m_RasterizerState);
-
     {
         D3D11_BUFFER_DESC desc{};
         desc.Usage = D3D11_USAGE_DEFAULT;
@@ -491,6 +490,7 @@ void SceneRenderer::UploadPointLights(const Scene *scene) noexcept {
         using namespace DirectX;
         lights[i].position = scene->pointLights[i].position;
         lights[i].ambientIntensity = scene->pointLights[i].ambientIntensity;
+        lights[i].intensity = scene->pointLights[i].intensity;
         lights[i].color = scene->pointLights[i].color;
         lights[i].constantAttenuation = scene->pointLights[i].constantAttenuation;
         lights[i].linearAttenuation = scene->pointLights[i].linearAttenuation;
