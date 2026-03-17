@@ -28,24 +28,24 @@ VSOut VSMain(uint vtID: SV_VertexID, uint iID: SV_InstanceID) {
     };
 
     uint indices[] = {
-        // front
-        0, 1, 3,
-        1, 2, 3,
-        // back
+        // front  (normal +Z)
+        0, 3, 1,
+        1, 3, 2,
+        // back   (normal -Z)
         4, 5, 7,
         5, 6, 7,
-        // right
+        // right  (normal +X)
         0, 1, 4,
-        1, 4, 5,
-        // left
-        2, 3, 7,
-        2, 6, 7,
-        // top
-        0, 3, 4,
-        3, 4, 7,
-        // bottom
+        1, 5, 4,
+        // left   (normal -X)
+        2, 3, 6,
+        3, 7, 6,
+        // top    (normal +Y)
+        0, 4, 3,
+        4, 7, 3,
+        // bottom (normal -Y)
         1, 2, 5,
-        2, 5, 6
+        2, 6, 5
     };
 
     const float size = 0.1f;

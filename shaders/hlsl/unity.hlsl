@@ -42,9 +42,9 @@ float3 PointLight(VSOut input, HLSL::PointLight light, uint lightIdx, float3 vie
     float lightDistance = length(light.position.xyz - input.worldPos);
     float attenuation = 1.0 / (light.constantAttenuation + light.linearAttenuation * lightDistance + light.quadraticAttenuation * (lightDistance * lightDistance));
 
-    float3 ambient  = light.color * objectColor * light.ambientIntensity;
-    float3 diffuse  = light.color * objectColor * diffuseStrength;
-    float3 specular = light.color * objectColor * specularStrength;
+    float3 ambient  = light.color * objectColor * light.ambientIntensity * light.intensity;
+    float3 diffuse  = light.color * objectColor * diffuseStrength * light.intensity;
+    float3 specular = light.color * objectColor * specularStrength * light.intensity;
 
     float shadow = PointLightShadowCalculation(light, lightIdx, input.worldPos);
     return ambient * attenuation + (1 - shadow) * (diffuse * attenuation + specular * attenuation);
@@ -126,6 +126,6 @@ PSOut PSMain(VSOut input) {
     }
     output.color += float4(DirectionalLight(input, CBLightParams.dirLight, viewDir, objectColor, normal), 0.0f);
 
-    output.debugColor = float4(normal, 1);
+    output.debugColor = 0.0f;
     return output;
 }

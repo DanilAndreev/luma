@@ -49,7 +49,7 @@ namespace HLSL {
         float ambientIntensity;
 
         float3 color;
-        float padding1;
+        float intensity;
 
         float constantAttenuation;
         float linearAttenuation;

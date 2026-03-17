@@ -145,8 +145,8 @@ struct Material {
 struct DirectionalLight {
     DirectX::XMFLOAT3 color = {1.0f, 1.0f, 0.5f};
     DirectX::XMFLOAT3 direction = {-1.0f, -1.0f, -1.0f};
-    float ambientIntensity = 0.1;
-    float intensity = 0.3;
+    float ambientIntensity = 0.01;
+    float intensity = 0.003;
 
     DirectX::XMFLOAT4X4 worldToLightProj = {};
     DirectX::XMFLOAT4X4 worldToLight = {};
@@ -157,7 +157,8 @@ struct PointLight {
     DirectX::XMFLOAT3 color = {1.0f, 1.0f, 1.0f};
     DirectX::XMFLOAT3 position = {0.0f, 0.0f, 0.0f};
 
-    float ambientIntensity = 0.1;
+    float ambientIntensity = 0.02f;
+    float intensity = 0.1f;
     float constantAttenuation = 1.0f;
     float linearAttenuation = 0.14f;
     float quadraticAttenuation = 0.07f;
