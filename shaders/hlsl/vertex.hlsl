@@ -11,11 +11,11 @@ VSOut VSMain(VSIn input) {
     float4x4 MVP = mul(CBMeshParams.transform, CBCameraParams.worldToCameraProj);
     output.position = mul(input.position, MVP);
     //TODO: calculate normal matrix and transform normals.
-    output.normal = input.normal;
+    output.normal = normalize(input.normal);
 
     //TODO: mult by model matrix
-    output.tangent = input.tangent;
-    output.bitangent = input.bitangent;
+    output.tangent = normalize(input.tangent);
+    output.bitangent = normalize(input.bitangent);
     output.texcoord0 = input.texcoord0;
     output.color0 = input.color0;
     float4 worldPos = mul(input.position, CBMeshParams.transform);

@@ -378,7 +378,10 @@ void SceneRenderer::RenderMesh(const Scene* scene, const Mesh& mesh, bool depthO
             m_PointLightsSRV,
             m_DirLightShadowMapTexSRV,
             m_PointLightShadowCubemapTexarrSRV,
-            material.normalTexSRV,
+            material.diffuseMapSRV,
+            material.specularMapSRV,
+            material.normalMapSRV,
+            material.heightMapSRV,
         };
         m_Ctx->PSSetShaderResources(0, std::size(PSSRVs), PSSRVs);
         m_Ctx->PSSetSamplers(0, 1, &m_ShadowMapSMP);
@@ -436,14 +439,11 @@ void SceneRenderer::UploadMeshParams(const Scene* scene, const Mesh& mesh) noexc
     HLSL::MeshParams params{};
     const Material& material = scene->materials[mesh.materialIdx];
     params.material.shininess = material.shininess;
-    params.material.ambientColor = material.ambientColor;
-    params.material.diffuseColor = material.diffuseColor;
-    params.material.specularColor = material.specularColor;
-    params.material.hasAmbientColorTex = material.ambientTex != nullptr;
-    params.material.hasDiffuseColorTex = material.diffuseTex != nullptr;
-    params.material.hasSpecularColorTex = material.specularTex != nullptr;
-    params.material.hasNormalTex = material.normalTex != nullptr;
-    params.material.hasHeightTex = material.heightTex != nullptr;
+    params.material.color = material.color;
+    params.material.hasDiffuseMap = material.diffuseMapSRV != nullptr;
+    params.material.hasSpecularMap = material.specularMapSRV != nullptr;
+    params.material.hasNormalMap = material.normalMapSRV != nullptr;
+    params.material.hasHeightMap = material.heightMapSRV != nullptr;
 
     XMMATRIX transform = XMLoadFloat4x4(&mesh.transform);
     XMStoreFloat4x4(&params.transform, XMMatrixTranspose(transform));
@@ -454,14 +454,13 @@ void SceneRenderer::UploadLightParams(const Scene *scene) noexcept {
     using namespace DirectX;
     HLSL::LightParams params{};
     params.pointLightCount = scene->pointLights.size();
-    params.dirLight.ambientColor = scene->directionalLight.ambientColor;
-    params.dirLight.diffuseColor = scene->directionalLight.diffuseColor;
-    params.dirLight.specularColor = scene->directionalLight.specularColor;
-    params.dirLight.direction = scene->directionalLight.direction;
-    params.dirLight.intensity = scene->directionalLight.intensity;
     params.dirLight.worldToLightProj = scene->directionalLight.worldToLightProj;
     params.dirLight.worldToLight = scene->directionalLight.worldToLight;
     params.dirLight.lightToProj = scene->directionalLight.lightToProj;
+    params.dirLight.color = scene->directionalLight.color;
+    params.dirLight.ambientIntensity = scene->directionalLight.ambientIntensity;
+    params.dirLight.direction = scene->directionalLight.direction;
+    params.dirLight.intensity = scene->directionalLight.intensity;
     m_Ctx->UpdateSubresource(m_LightParamsCB, 0, nullptr, &params, sizeof(params), 0);
 }
 
@@ -475,9 +474,8 @@ void SceneRenderer::UploadPointLights(const Scene *scene) noexcept {
     for (size_t i = 0; i < scene->pointLights.size(); ++i) {
         using namespace DirectX;
         lights[i].position = scene->pointLights[i].position;
-        lights[i].ambientColor = scene->pointLights[i].ambientColor;
-        lights[i].diffuseColor = scene->pointLights[i].diffuseColor;
-        lights[i].specularColor = scene->pointLights[i].specularColor;
+        lights[i].ambientIntensity = scene->pointLights[i].ambientIntensity;
+        lights[i].color = scene->pointLights[i].color;
         lights[i].constantAttenuation = scene->pointLights[i].constantAttenuation;
         lights[i].linearAttenuation = scene->pointLights[i].linearAttenuation;
         lights[i].quadraticAttenuation = scene->pointLights[i].quadraticAttenuation;

@@ -17,17 +17,13 @@ namespace HLSL {
     };
 
     struct MaterialParams {
-        float3 ambientColor;
-        uint hasAmbientColorTex;
-        float3 diffuseColor;
-        uint hasDiffuseColorTex;
-        float3 specularColor;
-        uint hasSpecularColorTex;
-
-        uint hasNormalTex;
-        uint hasHeightTex;
+        float3 color;
         float shininess;
-        float padding;
+
+        uint hasDiffuseMap;
+        uint hasSpecularMap;
+        uint hasNormalMap;
+        uint hasHeightMap;
     };
 
     struct MeshParams {
@@ -39,30 +35,31 @@ namespace HLSL {
         float4x4 worldToLightProj;
         float4x4 worldToLight;
         float4x4 lightToProj;
-        float3 ambientColor;
-        float padding1;
-        float3 diffuseColor;
-        float padding2;
-        float3 specularColor;
-        float padding3;
+
+        float3 color;
+        float ambientIntensity;
+
         float3 direction;
         float intensity;
     };
 
     struct PointLight {
-        float3 ambientColor;
-        float constantAttenuation;
-        float3 diffuseColor;
-        float linearAttenuation;
-        float3 specularColor;
-        float quadraticAttenuation;
         float3 position;
+        float ambientIntensity;
+
+        float3 color;
+        float padding1;
+
+        float constantAttenuation;
+        float linearAttenuation;
+        float quadraticAttenuation;
         uint shadowMapResolutionDim;
 
         float4x4 shadowMapProjInv;
+
         float shadowMapProjFarPlane;
         float shadowMapProjNearPlane;
-        float2 padding;
+        float2 padding2;
     };
 
     struct LightParams {

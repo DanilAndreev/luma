@@ -126,31 +126,26 @@ struct MeshInstance {
 };
 
 struct Material {
-    DirectX::XMFLOAT3 ambientColor = {0.7f, 0.7f, 0.7f};
-    DirectX::XMFLOAT3 diffuseColor = {0.7f, 0.7f, 0.7f};
-    DirectX::XMFLOAT3 specularColor = {0.7f, 0.7f, 0.7f};
+    DirectX::XMFLOAT3 color = {0.7f, 0.7f, 0.7f};
     float shininess = 32.0f;
 
     // TODO: move to scene texture pool for de-duplication.
     //       Also float3 and float textures could be joined to float4 and split with views.
-    ID3D11Texture2D* ambientTex = nullptr;
-    ID3D11Texture2D* diffuseTex = nullptr;
-    ID3D11Texture2D* specularTex = nullptr;
-    ID3D11Texture2D* normalTex = nullptr;
-    ID3D11Texture2D* heightTex = nullptr;
+    ID3D11Texture2D* diffuseMap = nullptr;
+    ID3D11Texture2D* specularMap = nullptr;
+    ID3D11Texture2D* normalMap = nullptr;
+    ID3D11Texture2D* heightMap = nullptr;
 
-    ID3D11ShaderResourceView* ambientTexSRV = nullptr;
-    ID3D11ShaderResourceView* diffuseTexSRV = nullptr;
-    ID3D11ShaderResourceView* specularTexSRV = nullptr;
-    ID3D11ShaderResourceView* normalTexSRV = nullptr;
-    ID3D11ShaderResourceView* heightTexSRV = nullptr;
+    ID3D11ShaderResourceView* diffuseMapSRV = nullptr;
+    ID3D11ShaderResourceView* specularMapSRV = nullptr;
+    ID3D11ShaderResourceView* normalMapSRV = nullptr;
+    ID3D11ShaderResourceView* heightMapSRV = nullptr;
 };
 
 struct DirectionalLight {
-    DirectX::XMFLOAT3 ambientColor = {0.1f, 0.1f, 0.05f};
-    DirectX::XMFLOAT3 diffuseColor = {1.0f, 1.0f, 0.5f};
-    DirectX::XMFLOAT3 specularColor = {1.0f, 1.0f, 0.5f};
+    DirectX::XMFLOAT3 color = {1.0f, 1.0f, 0.5f};
     DirectX::XMFLOAT3 direction = {-1.0f, -1.0f, -1.0f};
+    float ambientIntensity = 0.1;
     float intensity = 0.3;
 
     DirectX::XMFLOAT4X4 worldToLightProj = {};
@@ -159,11 +154,10 @@ struct DirectionalLight {
 };
 
 struct PointLight {
-    DirectX::XMFLOAT3 ambientColor = {0.1f, 0.1f, 0.1f};
-    DirectX::XMFLOAT3 diffuseColor = {1.0f, 1.0f, 1.0f};
-    DirectX::XMFLOAT3 specularColor = {1.0f, 1.0f, 1.0f};
+    DirectX::XMFLOAT3 color = {1.0f, 1.0f, 1.0f};
     DirectX::XMFLOAT3 position = {0.0f, 0.0f, 0.0f};
 
+    float ambientIntensity = 0.1;
     float constantAttenuation = 1.0f;
     float linearAttenuation = 0.14f;
     float quadraticAttenuation = 0.07f;

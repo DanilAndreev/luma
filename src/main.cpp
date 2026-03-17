@@ -185,19 +185,26 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR pCmdLine, int nCmdShow)
         auto& customMat = scn.materials.emplace_back();
         scn.meshes[4].materialIdx = 1;
 
-        Loader::LoadTexture("assets/cottage_normal.png", device, &customMat.normalTex);
-        const char texName[] = "Normal Map";
-        customMat.normalTex->SetPrivateData(WKPDID_D3DDebugObjectName, std::size(texName), texName);
+        Loader::LoadTexture("assets/cottage_normal.png", device, &customMat.normalMap);
+        const char normalMapName[] = "Normal Map";
+        customMat.normalMap->SetPrivateData(WKPDID_D3DDebugObjectName, std::size(normalMapName), normalMapName);
+
+        Loader::LoadTexture("assets/cottage_diffuse.png", device, &customMat.diffuseMap);
+        const char diffuseMapName[] = "Diffuse Map";
+        customMat.diffuseMap->SetPrivateData(WKPDID_D3DDebugObjectName, std::size(diffuseMapName), diffuseMapName);
 
         D3D11_TEXTURE2D_DESC texDesc{};
-        customMat.normalTex->GetDesc(&texDesc);
+        customMat.normalMap->GetDesc(&texDesc);
 
         D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc{};
         srvDesc.Format = texDesc.Format;
         srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
         srvDesc.Texture2D.MipLevels = 1;
-        device->CreateShaderResourceView(customMat.normalTex, &srvDesc, &customMat.normalTexSRV);
+        device->CreateShaderResourceView(customMat.normalMap, &srvDesc, &customMat.normalMapSRV);
 
+        customMat.diffuseMap->GetDesc(&texDesc);
+        srvDesc.Format = texDesc.Format;
+        device->CreateShaderResourceView(customMat.diffuseMap, &srvDesc, &customMat.diffuseMapSRV);
     }
 
     {
@@ -210,8 +217,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR pCmdLine, int nCmdShow)
         scn.pointLights.push_back(light);
 
         light.position = {0.0f, 1.5f, 1.0f};
-        light.diffuseColor = {0.5, 0.3, 0.8};
-        light.specularColor = {0.8, 0.5, 1.0f};
+        light.color = {0.5, 0.3, 0.8};
         scn.pointLights.push_back(light);
     }
 
